@@ -506,21 +506,29 @@ export function ResponsiveAIAssistant({ onNavigateToDashboard, onNavigate }: Res
       )}
 
      {/* UPDATED BUBBLE MENU WITH CANCEL BUTTON */}
-{/* FIXED BUBBLE MENU WITH CANCEL BUTTON AT TOP */}
+{/* FIXED BUBBLE MENU WITH PROPER SCROLLING */}
 {isBubbleOpen && (
   <div
     className="fixed inset-0 z-50"
     onClick={() => setIsBubbleOpen(false)}
     style={{ backgroundColor: 'rgba(0, 0, 0, 0.3)', backdropFilter: 'blur(5px)' }}
   >
-    {/* LEFT EDGE POSITIONING */}
+    {/* FIXED CONTAINER WITH PROPER SCROLLING */}
     <div
-      className="absolute left-4 top-1/2 transform -translate-y-1/2 flex flex-col gap-3 w-[320px]"
+      className="absolute left-4 top-4 bottom-4 w-[380px] flex flex-col gap-3 no-scrollbar"
+      style={{
+        maxHeight: 'calc(100vh - 32px)', // Ensure it fits in viewport
+        overflowY: 'auto',
+        overflowX: 'hidden', // Changed from visible to hidden
+        paddingLeft: '8px',
+        paddingRight: '8px',
+        paddingTop: '8px',
+      }}
       onClick={(e) => e.stopPropagation()}
     >
-      {/* CANCEL BUTTON AT THE TOP - SMALLER SIZE */}
+      {/* CANCEL BUTTON AT THE TOP */}
       <div
-        className="cancel-button-item opacity-0 self-start"
+        className="cancel-button-item opacity-0 self-start sticky top-0 z-10"
         style={{ 
           transform: 'translateX(-150px)',
           animation: isBubbleOpen 
@@ -534,11 +542,11 @@ export function ResponsiveAIAssistant({ onNavigateToDashboard, onNavigate }: Res
             backgroundColor: '#ffffff',
             color: '#000000',
             borderColor: '#e5e7eb',
-            borderRadius: '5px',
-            width: '5s0px',
+            borderRadius: '50px',
+            width: '50px',
             height: '50px',
-            marginLeft: '198px'
-            
+            marginLeft: '16px',
+            marginBottom: '8px',
           }}
           onClick={() => setIsBubbleOpen(false)}
           onMouseEnter={(e) => {
@@ -558,38 +566,41 @@ export function ResponsiveAIAssistant({ onNavigateToDashboard, onNavigate }: Res
         </button>
       </div>
 
-      {/* MENU ITEMS BELOW CANCEL BUTTON */}
+      {/* MENU ITEMS WITH FIXED BUTTON SIZING */}
       {[
         { label: 'Counseling', icon: Users, section: 'counseling' },
         { label: 'Smart Question Bank', icon: BookOpen, section: 'question-bank' },
         { label: 'Timetable Maker', icon: Calendar, section: 'timetable' },
         { label: 'Study Planner', icon: Target, section: 'study-planner' },
         { label: 'Quizzes', icon: GraduationCap, section: 'quizzes' },
-        { label: 'Syllabus', icon: FileText, section: 'syllabus' }
+        { label: 'Syllabus', icon: FileText, section: 'syllabus' },
+        { label: 'Community', icon: Users, section: 'community' }
       ].map((item, index) => (
         <div
           key={index}
           className="menu-bullet-item opacity-0"
           style={{ 
-            transform: 'translateX(7000px)',
+            transform: 'translateX(-150px)',
             animation: isBubbleOpen 
               ? `slideInLeft 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) ${(index + 1) * 0.1}s forwards`
               : 'none'
           }}
         >
-          {/* YOUR EXISTING CAPSULE BUTTONS */}
           <button
             className="w-full shadow-xl p-4 flex items-center gap-4 transition-all duration-300 font-semibold text-lg border-2"
             style={{
               backgroundColor: '#ffffff',
               color: '#000000',
               borderColor: '#e5e7eb',
-              marginLeft:'10px',
               borderRadius: '50px',
-              minHeight: '100px',
-              paddingLeft: '40px',
-              paddingRight: '24px',
-              
+              minHeight: '80px', // Reduced from 100px
+              maxWidth: '100%',
+              width: 'calc(100% - 16px)', // Account for margins
+              marginLeft: '8px',
+              marginRight: '8px',
+              paddingLeft: '24px',
+              paddingRight: '16px',
+              boxSizing: 'border-box', // Important for proper width calculation
             }}
             onClick={() => {
               console.log(`Clicked: ${item.label}`);
@@ -602,7 +613,7 @@ export function ResponsiveAIAssistant({ onNavigateToDashboard, onNavigate }: Res
               e.currentTarget.style.backgroundColor = '#000000';
               e.currentTarget.style.color = '#ffffff';
               e.currentTarget.style.borderColor = '#000000';
-              e.currentTarget.style.transform = 'scale(1.03)';
+              e.currentTarget.style.transform = 'scale(1.02)'; // Reduced scale
               e.currentTarget.style.boxShadow = '0 10px 25px rgba(0, 0, 0, 0.3)';
             }}
             onMouseLeave={(e) => {
@@ -614,7 +625,7 @@ export function ResponsiveAIAssistant({ onNavigateToDashboard, onNavigate }: Res
             }}
           >
             <item.icon className="w-5 h-5 flex-shrink-0" />
-            <div className="text-left flex-1">
+            <div className="text-left flex-1 min-w-0"> {/* Added min-w-0 */}
               <div style={{ fontFamily: 'Bethaine, Arial, sans-serif' }}>{item.label}</div>
               <div className="text-xs opacity-70 mt-1">Click to explore</div>
             </div>
@@ -625,7 +636,8 @@ export function ResponsiveAIAssistant({ onNavigateToDashboard, onNavigate }: Res
     </div>
   </div>
 )}
-{/* ADD THIS STYLE TAG RIGHT AFTER YOUR IMPORTS */}
+
+{/* UPDATED STYLES */}
 <style>{`
 @keyframes slideInLeft {
   from {
@@ -646,19 +658,28 @@ export function ResponsiveAIAssistant({ onNavigateToDashboard, onNavigate }: Res
   transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
-/* Cancel button styling - smaller and at top */
-.cancel-button-item button {
-  background-color: #ffffff !important;
-  color: #000000 !important;
-  border: 2px solid #e5e7eb !important;
+/* Hide scrollbar while allowing scroll */
+.no-scrollbar::-webkit-scrollbar { 
+  display: none; 
+}
+.no-scrollbar { 
+  -ms-overflow-style: none; 
+  scrollbar-width: none; 
 }
 
-.cancel-button-item button:hover {
-  background-color: #ef4444 !important;
-  color: #ffffff !important;
-  border-color: #ef4444 !important;
+/* Ensure smooth scrolling */
+.no-scrollbar {
+  scroll-behavior: smooth;
+}
+
+/* Fix for mobile scrolling */
+@supports (-webkit-overflow-scrolling: touch) {
+  .no-scrollbar {
+    -webkit-overflow-scrolling: touch;
+  }
 }
 `}</style>
+
 
       {/* Main Content */}
       <div className={`flex flex-col h-full transition-all duration-300 ${

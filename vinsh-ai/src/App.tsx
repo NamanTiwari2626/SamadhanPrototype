@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { ResponsiveAIAssistant } from "./components/ResponsiveAIAssistant";
 import { StudyDashboard } from "./components/StudyDashboard";
 import { Counseling } from "./components/Counseling";
+import CommunityChat from "./components/CommunityChat";
 import { SmartQuestionBank } from "./components/SmartQuestionBank";
 import { TimetableMaker } from "./components/TimetableMaker";
 import { StudyPlanner } from "./components/StudyPlanner";
@@ -17,7 +18,8 @@ type AppSection =
   | "timetable" 
   | "study-planner" 
   | "quizzes" 
-  | "syllabus";
+  | "syllabus"
+  | "community";
 
 export default function App() {
   const [currentSection, setCurrentSection] = useState<AppSection>("home");
@@ -28,11 +30,7 @@ export default function App() {
   };
 
   const handleBack = () => {
-    if (currentSection === "dashboard") {
-      setCurrentSection("home");
-    } else {
-      setCurrentSection("dashboard");
-    }
+    setCurrentSection("home");
   };
 
   const renderCurrentSection = () => {
@@ -63,6 +61,8 @@ export default function App() {
         return <Quizzes onBack={handleBack} />;
       case "syllabus":
         return <Syllabus onBack={handleBack} />;
+      case "community":
+        return <CommunityChat onBack={handleBack} />;
       default:
         return (
           <ResponsiveAIAssistant 
