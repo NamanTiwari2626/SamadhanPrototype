@@ -1,5 +1,14 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Button } from "./ui/button";
+import { Calendar1 } from "./icons/Calendar1";
+import { UsersAnimated } from "./icons/UsersAnimated";
+import { GlobeAnimated } from "./icons/GlobeAnimated";
+import { FileStackAnimated } from "./icons/FileStackAnimated";
+import { TargetAnimated } from "./icons/TargetAnimated";
+import { GraduationCapAnimated } from "./icons/GraduationCapAnimated";
+import { FileTextAnimated } from "./icons/FileTextAnimated";
+import { UserAnimated } from "./icons/UserAnimated";
+import { PaperclipAnimated } from "./icons/PaperclipAnimated";
 import { Input } from "./ui/input";
 import { Card } from "./ui/card";
 import { Progress } from "./ui/progress";
@@ -41,12 +50,14 @@ import {
 import globeImage from "../assets/ef6432358e70cd07cef418bda499a8b4438f8bd9.png";
 import Threads from "./Threads";
 import RotatingText from "./RotatingText";
+import { Counseling } from "./Counseling";
 
 interface Message {
   id: string;
   text: string;
   sender: "user" | "ai";
   timestamp: Date;
+  files?: File[];
 }
 
 interface ResponsiveAIAssistantProps {
@@ -64,11 +75,20 @@ export function ResponsiveAIAssistant({ onNavigateToDashboard, onNavigate }: Res
   const [showSidebar, setShowSidebar] = useState(false);
   const [showProfilePanel, setShowProfilePanel] =
     useState(false);
+  const [isTimetableHover, setIsTimetableHover] = useState(false);
+  const [isCounselingHover, setIsCounselingHover] = useState(false);
+  const [isCommunityHover, setIsCommunityHover] = useState(false);
+  const [isQuestionBankHover, setIsQuestionBankHover] = useState(false);
+  const [isStudyPlannerHover, setIsStudyPlannerHover] = useState(false);
+  const [isQuizzesHover, setIsQuizzesHover] = useState(false);
+  const [isSyllabusHover, setIsSyllabusHover] = useState(false);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [recognition, setRecognition] =
     useState<any>(null);
   const [speechSynthesis, setSpeechSynthesis] =
     useState<SpeechSynthesis | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Mock user analytics data
   const userStats = {
@@ -186,13 +206,18 @@ export function ResponsiveAIAssistant({ onNavigateToDashboard, onNavigate }: Res
   };
 
   const handleSendMessage = () => {
-    if (!inputText.trim()) return;
+    if (!inputText.trim() && selectedFiles.length === 0) return;
+
+    const messageText = selectedFiles.length > 0 
+      ? `${inputText}${inputText ? '\n\n' : ''}📎 Attached ${selectedFiles.length} file(s): ${selectedFiles.map(f => f.name).join(', ')}`
+      : inputText;
 
     const userMessage: Message = {
       id: Date.now().toString(),
-      text: inputText,
+      text: messageText,
       sender: "user",
       timestamp: new Date(),
+      files: selectedFiles.length > 0 ? [...selectedFiles] : undefined,
     };
 
     setMessages((prev) => [...prev, userMessage]);
@@ -202,7 +227,7 @@ export function ResponsiveAIAssistant({ onNavigateToDashboard, onNavigate }: Res
     setTimeout(() => {
       const aiResponse: Message = {
         id: (Date.now() + 1).toString(),
-        text: generateAIResponse(inputText),
+        text: generateAIResponse(inputText || `I received ${selectedFiles.length} file(s) from you.`),
         sender: "ai",
         timestamp: new Date(),
       };
@@ -210,6 +235,7 @@ export function ResponsiveAIAssistant({ onNavigateToDashboard, onNavigate }: Res
     }, 1000);
 
     setInputText("");
+    setSelectedFiles([]);
   };
 
   const getXPProgress = () => {
@@ -265,8 +291,43 @@ export function ResponsiveAIAssistant({ onNavigateToDashboard, onNavigate }: Res
     }
   };
 
+  const handleFileSelect = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []) as File[];
+    setSelectedFiles(prev => [...prev, ...files]);
+    
+    // Clear the input after selection
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const removeFile = (index: number) => {
+    setSelectedFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const openFile = (file: File) => {
+    const url = URL.createObjectURL(file);
+    window.open(url, '_blank');
+    // Clean up the URL after a delay to free memory
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  };
+
   return (
     <div className="h-screen relative overflow-hidden" style={{ background: 'linear-gradient(to right, rgb(15, 23, 42), rgb(51, 65, 85))' }}>
+      {/* Hidden file input */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        multiple
+        onChange={handleFileChange}
+        className="hidden"
+        accept="*/*"
+      />
+      
       {/* Background background: linear-gradient(to right, rgb(15, 23, 42), rgb(51, 65, 85));*/}
       <div className="absolute inset-0 z-0">
         <Threads
@@ -308,13 +369,13 @@ export function ResponsiveAIAssistant({ onNavigateToDashboard, onNavigate }: Res
               {/* User Avatar & Basic Info */}
               <div className="text-center mb-6">
                 <div
-                  className="w-20 h-20 mx-auto mb-4 rounded-full flex items-center justify-center text-3xl border-4 border-white/20"
+                  className="w-20 h-20 mx-auto mb-4 rounded-full flex items-center justify-center border-4 border-white/20"
                   style={{
                     background:
                       "linear-gradient(transparent)",
                   }}
                 >
-                  👤
+                  <UserAnimated width={40} height={40} stroke="#ffffff" />
                 </div>
                 <h4 className="text-white text-lg mb-1" style={{ fontFamily: 'Bethaine, Arial, sans-serif' }}>
                   Alex Thompson
@@ -574,13 +635,13 @@ export function ResponsiveAIAssistant({ onNavigateToDashboard, onNavigate }: Res
         { label: 'Study Planner', icon: Target, section: 'study-planner' },
         { label: 'Quizzes', icon: GraduationCap, section: 'quizzes' },
         { label: 'Syllabus', icon: FileText, section: 'syllabus' },
-        { label: 'Community', icon: Users, section: 'community' }
+        { label: 'Community Chat', icon: Users, section: 'community' }
       ].map((item, index) => (
         <div
           key={index}
           className="menu-bullet-item opacity-0"
           style={{ 
-            transform: 'translateX(-150px)',
+            transform: 'translateX(7000px)',
             animation: isBubbleOpen 
               ? `slideInLeft 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) ${(index + 1) * 0.1}s forwards`
               : 'none'
@@ -603,7 +664,7 @@ export function ResponsiveAIAssistant({ onNavigateToDashboard, onNavigate }: Res
               boxSizing: 'border-box', // Important for proper width calculation
             }}
             onClick={() => {
-              console.log(`Clicked: ${item.label}`);
+              console.log(`Clicked: ${item.label}, Section: ${item.section}`);
               if (onNavigate) {
                 onNavigate(item.section);
               }
@@ -615,6 +676,13 @@ export function ResponsiveAIAssistant({ onNavigateToDashboard, onNavigate }: Res
               e.currentTarget.style.borderColor = '#000000';
               e.currentTarget.style.transform = 'scale(1.02)'; // Reduced scale
               e.currentTarget.style.boxShadow = '0 10px 25px rgba(0, 0, 0, 0.3)';
+              if (item.section === 'timetable') setIsTimetableHover(true);
+              if (item.section === 'counseling') setIsCounselingHover(true);
+              if (item.section === 'community') setIsCommunityHover(true);
+              if (item.section === 'question-bank') setIsQuestionBankHover(true);
+              if (item.section === 'study-planner') setIsStudyPlannerHover(true);
+              if (item.section === 'quizzes') setIsQuizzesHover(true);
+              if (item.section === 'syllabus') setIsSyllabusHover(true);
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.backgroundColor = '#ffffff';
@@ -622,9 +690,46 @@ export function ResponsiveAIAssistant({ onNavigateToDashboard, onNavigate }: Res
               e.currentTarget.style.borderColor = '#e5e7eb';
               e.currentTarget.style.transform = 'scale(1)';
               e.currentTarget.style.boxShadow = '0 4px 6px rgba(0, 0, 0, 0.1)';
+              if (item.section === 'timetable') setIsTimetableHover(false);
+              if (item.section === 'counseling') setIsCounselingHover(false);
+              if (item.section === 'community') setIsCommunityHover(false);
+              if (item.section === 'question-bank') setIsQuestionBankHover(false);
+              if (item.section === 'study-planner') setIsStudyPlannerHover(false);
+              if (item.section === 'quizzes') setIsQuizzesHover(false);
+              if (item.section === 'syllabus') setIsSyllabusHover(false);
             }}
           >
-            <item.icon className="w-5 h-5 flex-shrink-0" />
+            {item.section === 'timetable' ? (
+              <div className="-m-2">{/* negate internal padding of Calendar1 */}
+                <Calendar1 width={20} height={20} isHovering={isTimetableHover} />
+              </div>
+            ) : item.section === 'counseling' ? (
+              <div className="-m-2">
+                <UsersAnimated width={20} height={20} isHovering={isCounselingHover} />
+              </div>
+            ) : item.section === 'community' ? (
+              <div className="-m-2">
+                <GlobeAnimated width={20} height={20} isHovering={isCommunityHover} />
+              </div>
+            ) : item.section === 'question-bank' ? (
+              <div className="-m-2">
+                <FileStackAnimated width={20} height={20} isHovering={isQuestionBankHover} />
+              </div>
+            ) : item.section === 'study-planner' ? (
+              <div className="-m-2">
+                <TargetAnimated width={20} height={20} isHovering={isStudyPlannerHover} />
+              </div>
+            ) : item.section === 'quizzes' ? (
+              <div className="-m-2">
+                <GraduationCapAnimated width={20} height={20} isHovering={isQuizzesHover} />
+              </div>
+            ) : item.section === 'syllabus' ? (
+              <div className="-m-2">
+                <FileTextAnimated width={20} height={20} isHovering={isSyllabusHover} />
+              </div>
+            ) : (
+              <item.icon className="w-5 h-5 flex-shrink-0" />
+            )}
             <div className="text-left flex-1 min-w-0"> {/* Added min-w-0 */}
               <div style={{ fontFamily: 'Bethaine, Arial, sans-serif' }}>{item.label}</div>
               <div className="text-xs opacity-70 mt-1">Click to explore</div>
@@ -678,11 +783,20 @@ export function ResponsiveAIAssistant({ onNavigateToDashboard, onNavigate }: Res
     -webkit-overflow-scrolling: touch;
   }
 }
+
+/* Hide scrollbar while keeping scroll functionality */
+.scrollbar-hide {
+  -ms-overflow-style: none;  /* Internet Explorer 10+ */
+  scrollbar-width: none;  /* Firefox */
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;  /* Safari and Chrome */
+}
 `}</style>
 
 
       {/* Main Content */}
-      <div className={`flex flex-col h-full transition-all duration-300 ${
+      <div className={`flex flex-col h-full transition-all duration-300 min-h-0 ${
     isBubbleOpen ? 'ml-[340px] scale-95' : ''
   }`}
 >
@@ -739,7 +853,7 @@ export function ResponsiveAIAssistant({ onNavigateToDashboard, onNavigate }: Res
                   "linear-gradient(135deg, rgba(2, 0, 2, 0.76), rgba(0, 0, 0, 0.25))",
               }}
             >
-              <span className="text-lg">👤</span>
+              <UserAnimated width={20} height={20} stroke="#ffffff" />
               {userStats.streak > 0 && (
                 <div className="absolute -top-1 -right-1 w-5 h-5 bg-orange-500 rounded-full flex items-center justify-center">
                   <Flame className="w-3 h-3 text-white" />
@@ -773,7 +887,7 @@ export function ResponsiveAIAssistant({ onNavigateToDashboard, onNavigate }: Res
 
         {/* Content Area - ADD blur and scale when menu is open */}
 <div 
-  className={`flex-1 relative z-10 px-4 lg:px-6 transition-all duration-300 ${
+  className={`flex-1 relative z-10 px-4 lg:px-6 transition-all duration-300 min-h-0 ${
     isBubbleOpen ? 'blur-sm scale-95' : ''
   }`}
 >
@@ -814,12 +928,9 @@ export function ResponsiveAIAssistant({ onNavigateToDashboard, onNavigate }: Res
                 <p className="text-lg lg:text-xl text-gray-200" style={{ fontFamily: 'Dakota Motors, Arial, sans-serif' }}>
                   Your smart study companion
                 </p>
-                <p className="text-base lg:text-lg text-gray-300 max-w-md" style={{ fontFamily: 'Dakota Motors, Arial, sans-serif' }}>
-                  Achieve your competitive exam goals with intelligent practice, performance tracking, and expert guidance
-                </p>
                 <div className="mt-4 p-3 bg-white/10 rounded-lg border border-white/20 backdrop-blur-lg">
-                  <p className="text-sm text-gray-200" style={{ fontFamily: 'Bethaine, Arial, sans-serif' }}>
-                    💡 <strong>Tip:</strong> Click the menu button (☰) in the top-left to access all study tools including Question Bank, Timetable Maker, Study Planner, and more!
+                  <p className="font-BodoniFLF-Bold text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl text-gray-300">
+                    Achieve your competitive exam goals with intelligent practice, performance tracking, and expert guidance
                   </p>
                 </div>
               </div>
@@ -856,26 +967,14 @@ export function ResponsiveAIAssistant({ onNavigateToDashboard, onNavigate }: Res
                   )}
                   {isListening ? "Stop" : "Voice"}
                 </Button>
-                {onNavigateToDashboard && (
-                  <Button
-                    onClick={onNavigateToDashboard}
-                    className="text-white border-0 px-6 py-3 rounded-full shadow-lg hover:opacity-90"
-                    style={{
-                      background:
-                        "linear-gradient(135deg, rgb(34, 197, 94), rgb(16, 185, 129))",
-                    }}
-                  >
-                    <Target className="w-4 h-4 mr-2" />
-                    Study Dashboard
-                  </Button>
-                )}
+                
               </div>
             </div>
           ) : (
             /* Chat Interface */
-            <div className="h-full flex flex-col">
+            <div className="h-full flex flex-col max-h-[calc(100vh-200px)]">
               {/* Chat Messages */}
-              <div className="flex-1 overflow-y-auto mb-4 space-y-4 pb-4">
+              <div className="flex-1 overflow-y-auto mb-4 space-y-4 pb-4 min-h-0 scroll-smooth scrollbar-hide">
                 {messages.length === 0 && (
                   <div className="text-center py-8">
                     <p className="text-gray-200" style={{ fontFamily: 'Bethaine, Arial, sans-serif' }}>
@@ -905,9 +1004,31 @@ export function ResponsiveAIAssistant({ onNavigateToDashboard, onNavigate }: Res
                       }
                     >
                       <div className="flex items-start justify-between gap-2">
-                        <p className="text-sm lg:text-base" style={{ fontFamily: 'Bethaine, Arial, sans-serif' }}>
-                          {message.text}
-                        </p>
+                        <div className="flex-1">
+                          <p className="text-sm lg:text-base" style={{ fontFamily: 'Bethaine, Arial, sans-serif' }}>
+                            {message.text}
+                          </p>
+                          {/* File Attachments */}
+                          {message.files && message.files.length > 0 && (
+                            <div className="mt-2 space-y-1">
+                              {message.files.map((file, index) => (
+                                <div
+                                  key={index}
+                                  className="flex items-center gap-2 p-2 bg-white/10 rounded-lg cursor-pointer hover:bg-white/20 transition-colors"
+                                  onClick={() => openFile(file)}
+                                >
+                                  <span className="text-lg">📎</span>
+                                  <span className="text-sm text-gray-200 truncate max-w-48">
+                                    {file.name}
+                                  </span>
+                                  <span className="text-xs text-gray-400 ml-auto">
+                                    {(file.size / 1024).toFixed(1)} KB
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
                         {message.sender === "ai" && (
                           <Button
                             variant="ghost"
@@ -942,6 +1063,38 @@ export function ResponsiveAIAssistant({ onNavigateToDashboard, onNavigate }: Res
   }`}
 >
   <Card className="backdrop-blur-lg bg-white/10 border border-white/20 p-4 shadow-xl">
+            {/* Selected Files Display */}
+            {selectedFiles.length > 0 && (
+              <div className="mb-3 p-2 bg-white/5 rounded-lg border border-white/10">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-sm text-gray-300">📎 Selected Files:</span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setSelectedFiles([])}
+                    className="text-xs text-gray-400 hover:text-white"
+                  >
+                    Clear All
+                  </Button>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {selectedFiles.map((file, index) => (
+                    <div
+                      key={index}
+                      className="flex items-center gap-1 px-2 py-1 bg-white/10 rounded text-xs text-gray-300"
+                    >
+                      <span className="truncate max-w-32">{file.name}</span>
+                      <button
+                        onClick={() => removeFile(index)}
+                        className="text-gray-400 hover:text-white ml-1"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
             <div className="flex gap-3">
               <div className="flex-1 relative">
                 <Input
@@ -949,13 +1102,25 @@ export function ResponsiveAIAssistant({ onNavigateToDashboard, onNavigate }: Res
                   onChange={(e) => setInputText(e.target.value)}
                   onKeyPress={handleKeyPress}
                   placeholder="Type your message..."
-                  className="bg-white/10 border-white/20 text-white placeholder:text-white/60 pr-12 rounded-full focus:ring-2 focus:border-transparent"
+                  className="bg-white/10 border-white/20 text-white placeholder:text-white/60 pr-20 rounded-full focus:ring-2 focus:border-transparent"
                   style={
                     {
                       "--tw-ring-color": "rgb(255, 182, 193)",
                     } as React.CSSProperties
                   }
                 />
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-10 top-1/2 -translate-y-1/2 h-8 w-8 p-0 hover:bg-white/10"
+                  style={{
+                    color: "rgb(255, 182, 193)",
+                  }}
+                  onClick={handleFileSelect}
+                  title="Attach files"
+                >
+                  <PaperclipAnimated width={16} height={16} stroke="rgb(255, 182, 193)" />
+                </Button>
                 <Button
                   variant="ghost"
                   size="sm"
@@ -976,7 +1141,7 @@ export function ResponsiveAIAssistant({ onNavigateToDashboard, onNavigate }: Res
               </div>
               <Button
                 onClick={handleSendMessage}
-                disabled={!inputText.trim()}
+                disabled={!inputText.trim() && selectedFiles.length === 0}
                 className="text-white border-0 rounded-full px-6 shadow-lg disabled:opacity-50 hover:opacity-90"
                 style={{
                   background:

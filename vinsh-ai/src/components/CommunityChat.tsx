@@ -3,6 +3,7 @@ import { Card } from "./ui/card";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Users, Send, ArrowLeft, Hash } from "lucide-react";
+import Threads from "./Threads";
 
 interface CommunityChatProps {
   onBack: () => void;
@@ -41,12 +42,26 @@ export default function CommunityChat({ onBack }: CommunityChatProps) {
 
   return (
     <div className="h-screen relative overflow-hidden" style={{ background: 'linear-gradient(to right, rgb(15, 23, 42), rgb(51, 65, 85))' }}>
-      <div className="flex flex-col h-full">
+      {/* Threaded Background */}
+      <div className="absolute inset-0 z-0">
+        <Threads
+          amplitude={1}
+          distance={0}
+          enableMouseInteraction={true}
+        />
+      </div>
+      <div className="flex flex-col h-full relative z-10">
         {/* Header */}
         <div className="flex items-center justify-between p-4 lg:p-6">
           <div className="flex items-center gap-3">
-            <Button variant="ghost" size="sm" onClick={onBack} className="text-white hover:bg-white/10">
-              <ArrowLeft className="w-5 h-5 mr-1" /> Back
+          <Button
+              variant="ghost"
+              size="sm"
+              onClick={onBack}
+              className="text-white hover:bg-white/10 border border-white/20"
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back
             </Button>
             <div className="flex items-center gap-2 text-white">
               <Users className="w-5 h-5" />

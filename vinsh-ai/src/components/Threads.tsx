@@ -7,7 +7,7 @@ import { MoveLeft } from 'lucide-react';
 interface ThreadsProps {
   color?: [number, number, number];
   amplitude?: number;
-  distance?:10;
+  distance?:number;
   enableMouseInteraction?: boolean;
 }
 
@@ -142,9 +142,11 @@ const Threads: React.FC<ThreadsProps> = ({
     if (!containerRef.current) return;
     const container = containerRef.current;
 
-    const renderer = new Renderer({ alpha: true });
+    // Use opaque canvas to avoid white flicker during reflows/interactions
+    const renderer = new Renderer({ alpha: false, premultipliedAlpha: false });
     const gl = renderer.gl;
-    gl.clearColor(0, 0, 0, 0);
+    // Set a dark clear color matching the app background (slate-ish)
+    gl.clearColor(0.04, 0.09, 0.16, 1);
     gl.enable(gl.BLEND);
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
     container.appendChild(gl.canvas);

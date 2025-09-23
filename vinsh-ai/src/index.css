@@ -424,6 +424,8 @@
   body {
     background-color: var(--background);
     color: var(--foreground);
+    background-image: linear-gradient(to right, rgb(15, 23, 42), rgb(51, 65, 85));
+    background-attachment: fixed;
   }
 
   :where(:not(:has([class*=" text-"]), :not(:has([class^="text-"])))) h1 {
@@ -5324,3 +5326,30 @@ html {
     opacity: 0;
   }
 }
+
+/* Custom font: Waltograph UI */
+@font-face {
+  font-family: 'Waltograph UI';
+  src: url('./assets/waltographUI.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+.font-waltograph {
+  font-family: 'Waltograph UI', Arial, sans-serif;
+}
+
+/* Custom font: Waltograph UI */
+@font-face {
+  font-family: 'BodoniFLF-Bold';
+  src: url('./assets/BodoniFLF-Bold.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+.font-BodoniFLF-Bold {
+  font-family: 'BodoniFLF-Bold', Arial, sans-serif;
+}
+

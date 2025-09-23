@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { Button } from "./ui/button";
 import { Card } from "./ui/card";
 import { Badge } from "./ui/badge";
@@ -7,6 +7,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { Input } from "./ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import { Checkbox } from "./ui/checkbox";
+import Threads from "./Threads";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "./ui/dialog";
 import {
   ArrowLeft,
   Calendar,
@@ -14,9 +16,6 @@ import {
   Plus,
   Edit,
   Trash2,
-  Save,
-  Download,
-  Share2,
   Target,
   CheckCircle,
   AlertCircle,
@@ -125,14 +124,27 @@ export function TimetableMaker({ onBack }: TimetableMakerProps) {
     }
   ]);
 
-  const weeklyStats = {
-    totalHours: 42,
-    completedHours: 28,
-    subjectsCovered: 6,
-    sessionsCompleted: 12,
-    averageSessionLength: 90,
-    productivity: 85
-  };
+  const [creditedSessionIds, setCreditedSessionIds] = useState<Set<string>>(new Set());
+  const [pendingSessionId, setPendingSessionId] = useState<string | null>(null);
+  const [questionOpen, setQuestionOpen] = useState(false);
+
+  const weeklyStats = useMemo(() => {
+    const totalMinutes = studySessions.reduce((sum, s) => sum + s.duration, 0);
+    const credited = studySessions.filter(s => creditedSessionIds.has(s.id));
+    const completedMinutes = credited.reduce((sum, s) => sum + s.duration, 0);
+    const subjects = new Set(credited.map(s => s.subject));
+    const sessionsCompleted = credited.length;
+    const averageSessionLength = sessionsCompleted > 0 ? Math.round(completedMinutes / sessionsCompleted) : 0;
+    const productivity = totalMinutes > 0 ? Math.round((completedMinutes / totalMinutes) * 100) : 0;
+    return {
+      totalHours: Math.round(totalMinutes / 60),
+      completedHours: Math.round(completedMinutes / 60),
+      subjectsCovered: subjects.size,
+      sessionsCompleted,
+      averageSessionLength,
+      productivity,
+    };
+  }, [studySessions, creditedSessionIds]);
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
@@ -182,12 +194,22 @@ export function TimetableMaker({ onBack }: TimetableMakerProps) {
     return (endTime.getTime() - startTime.getTime()) / (1000 * 60);
   };
 
-  const toggleSessionComplete = (id: string) => {
-    setStudySessions(sessions =>
-      sessions.map(session =>
-        session.id === id ? { ...session, completed: !session.completed } : session
-      )
-    );
+  const handleAttemptComplete = (id: string) => {
+    setPendingSessionId(id);
+    setQuestionOpen(true);
+  };
+
+  const handleQuestionCancel = () => {
+    setQuestionOpen(false);
+    setPendingSessionId(null);
+  };
+
+  const handleQuestionConfirm = () => {
+    if (pendingSessionId) {
+      setCreditedSessionIds(prev => new Set(prev).add(pendingSessionId));
+    }
+    setQuestionOpen(false);
+    setPendingSessionId(null);
   };
 
   const deleteSession = (id: string) => {
@@ -196,9 +218,13 @@ export function TimetableMaker({ onBack }: TimetableMakerProps) {
 
   return (
     <div className="min-h-screen relative overflow-hidden" style={{ background: 'linear-gradient(to right, rgb(15, 23, 42), rgb(51, 65, 85))' }}>
-      {/* Background Pattern */}
+      {/* Threaded Background */}
       <div className="absolute inset-0 z-0">
-        <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg%20width%3D%2260%22%20height%3D%2260%22%20viewBox%3D%220%200%2060%2060%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Cg%20fill%3D%22none%22%20fill-rule%3D%22evenodd%22%3E%3Cg%20fill%3D%22%23ffffff%22%20fill-opacity%3D%220.05%22%3E%3Ccircle%20cx%3D%2230%22%20cy%3D%2230%22%20r%3D%221%22/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')] opacity-20"></div>
+        <Threads
+          amplitude={1}
+          distance={0}
+          enableMouseInteraction={true}
+        />
       </div>
 
       {/* Header */}
@@ -273,18 +299,12 @@ export function TimetableMaker({ onBack }: TimetableMakerProps) {
         </div>
 
         <Tabs value={selectedTab} onValueChange={setSelectedTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4 bg-white/10 border-white/20">
+          <TabsList className="grid w-full grid-cols-2 bg-white/10 border-white/20">
             <TabsTrigger value="create" className="text-white data-[state=active]:bg-white/20">
               Create
             </TabsTrigger>
             <TabsTrigger value="view" className="text-white data-[state=active]:bg-white/20">
               View
-            </TabsTrigger>
-            <TabsTrigger value="analytics" className="text-white data-[state=active]:bg-white/20">
-              Analytics
-            </TabsTrigger>
-            <TabsTrigger value="templates" className="text-white data-[state=active]:bg-white/20">
-              Templates
             </TabsTrigger>
           </TabsList>
 
@@ -371,8 +391,16 @@ export function TimetableMaker({ onBack }: TimetableMakerProps) {
 
                   <Button
                     onClick={handleAddSession}
-                    className="w-full text-white border-0 rounded-full"
-                    style={{ background: 'linear-gradient(135deg, rgb(34, 197, 94), rgb(16, 185, 129))' }}
+                    className="w-full text-white border-0 rounded-full shadow-lg transition-all duration-300"
+                    style={{ background: '#000000', boxShadow: '0 0 16px rgba(255,255,255,0.18)' }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.boxShadow = '0 0 28px rgba(255,255,255,0.35)';
+                      e.currentTarget.style.transform = 'scale(1.02)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.boxShadow = '0 0 16px rgba(255,255,255,0.18)';
+                      e.currentTarget.style.transform = 'scale(1)';
+                    }}
                   >
                     <Plus className="w-4 h-4 mr-2" />
                     Add Session
@@ -386,24 +414,7 @@ export function TimetableMaker({ onBack }: TimetableMakerProps) {
                   <h3 className="text-xl font-bold text-white" style={{ fontFamily: 'Bethaine, Arial, sans-serif' }}>
                     Today's Sessions
                   </h3>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="border-white/20 text-white hover:bg-white/10"
-                    >
-                      <Save className="w-4 h-4 mr-2" />
-                      Save
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="border-white/20 text-white hover:bg-white/10"
-                    >
-                      <Download className="w-4 h-4 mr-2" />
-                      Export
-                    </Button>
-                  </div>
+                  <div className="flex items-center gap-2" />
                 </div>
 
                 <div className="space-y-3">
@@ -412,8 +423,22 @@ export function TimetableMaker({ onBack }: TimetableMakerProps) {
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
                           <Checkbox
-                            checked={session.completed}
-                            onCheckedChange={() => toggleSessionComplete(session.id)}
+                            checked={creditedSessionIds.has(session.id)}
+                            onCheckedChange={(val) => {
+                              const isCredited = creditedSessionIds.has(session.id);
+                              const nextChecked = Boolean(val);
+                              if (isCredited && !nextChecked) {
+                                // Uncredit immediately
+                                setCreditedSessionIds(prev => {
+                                  const next = new Set(prev);
+                                  next.delete(session.id);
+                                  return next;
+                                });
+                              } else if (!isCredited && nextChecked) {
+                                // Ask to credit
+                                handleAttemptComplete(session.id);
+                              }
+                            }}
                             className="border-white/40"
                           />
                           <div>
@@ -474,7 +499,7 @@ export function TimetableMaker({ onBack }: TimetableMakerProps) {
                   <Button
                     variant="outline"
                     size="sm"
-                    className="border-white/20 text-white hover:bg-white/10"
+                    className="border-white/20 text-black hover:bg-white/10"
                   >
                     <ChevronLeft className="w-4 h-4" />
                   </Button>
@@ -482,7 +507,7 @@ export function TimetableMaker({ onBack }: TimetableMakerProps) {
                   <Button
                     variant="outline"
                     size="sm"
-                    className="border-white/20 text-white hover:bg-white/10"
+                    className="border-white/20 text-black hover:bg-white/10"
                   >
                     <ChevronRight className="w-4 h-4" />
                   </Button>
@@ -530,7 +555,7 @@ export function TimetableMaker({ onBack }: TimetableMakerProps) {
                                   <Badge className={`text-xs ${getPriorityColor(session.priority)}`}>
                                     {session.priority}
                                   </Badge>
-                                  {session.completed && <CheckCircle className="w-4 h-4 text-green-400" />}
+                                  {creditedSessionIds.has(session.id) && <CheckCircle className="w-4 h-4 text-green-400" />}
                                 </div>
                               </div>
                             ))}
@@ -546,134 +571,30 @@ export function TimetableMaker({ onBack }: TimetableMakerProps) {
             </Card>
           </TabsContent>
 
-          {/* Analytics Tab */}
-          <TabsContent value="analytics" className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              <Card className="bg-white/10 border-white/20 p-6 backdrop-blur-lg">
-                <h3 className="text-lg font-bold text-white mb-4" style={{ fontFamily: 'Bethaine, Arial, sans-serif' }}>
-                  Study Time Distribution
-                </h3>
-                <div className="space-y-3">
-                  {subjects.slice(0, 5).map((subject, index) => {
-                    const hours = Math.floor(Math.random() * 10) + 1;
-                    return (
-                      <div key={subject}>
-                        <div className="flex justify-between items-center mb-1">
-                          <span className="text-sm text-gray-300">{subject}</span>
-                          <span className="text-sm text-white">{hours}h</span>
-                        </div>
-                        <Progress value={hours * 10} className="h-2" />
-                      </div>
-                    );
-                  })}
-                </div>
-              </Card>
-
-              <Card className="bg-white/10 border-white/20 p-6 backdrop-blur-lg">
-                <h3 className="text-lg font-bold text-white mb-4" style={{ fontFamily: 'Bethaine, Arial, sans-serif' }}>
-                  Productivity Trends
-                </h3>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-300">This Week</span>
-                    <div className="flex items-center gap-2">
-                      <TrendingUp className="w-4 h-4 text-green-400" />
-                      <span className="text-sm text-green-400">+12%</span>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-300">Last Week</span>
-                    <div className="flex items-center gap-2">
-                      <TrendingUp className="w-4 h-4 text-green-400" />
-                      <span className="text-sm text-green-400">+8%</span>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-300">This Month</span>
-                    <div className="flex items-center gap-2">
-                      <TrendingUp className="w-4 h-4 text-green-400" />
-                      <span className="text-sm text-green-400">+25%</span>
-                    </div>
-                  </div>
-                </div>
-              </Card>
-
-              <Card className="bg-white/10 border-white/20 p-6 backdrop-blur-lg">
-                <h3 className="text-lg font-bold text-white mb-4" style={{ fontFamily: 'Bethaine, Arial, sans-serif' }}>
-                  Goals & Achievements
-                </h3>
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-300">Daily Goal</span>
-                    <span className="text-sm text-white">8h / 10h</span>
-                  </div>
-                  <Progress value={80} className="h-2" />
-                  
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-300">Weekly Goal</span>
-                    <span className="text-sm text-white">42h / 50h</span>
-                  </div>
-                  <Progress value={84} className="h-2" />
-                  
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-300">Streak</span>
-                    <span className="text-sm text-white">15 days</span>
-                  </div>
-                </div>
-              </Card>
-            </div>
-          </TabsContent>
-
-          {/* Templates Tab */}
-          <TabsContent value="templates" className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              <Card className="bg-white/10 border-white/20 p-6 backdrop-blur-lg hover:scale-105 transition-transform duration-300">
-                <div className="text-center">
-                  <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center">
-                    <Target className="w-8 h-8 text-white" />
-                  </div>
-                  <h3 className="text-lg font-bold text-white mb-2" style={{ fontFamily: 'Bethaine, Arial, sans-serif' }}>
-                    JEE Main Preparation
-                  </h3>
-                  <p className="text-sm text-gray-300 mb-4">8 hours daily, 6 subjects</p>
-                  <Button className="w-full text-white border-0 rounded-full" style={{ background: 'linear-gradient(135deg, rgb(59, 130, 246), rgb(6, 182, 212))' }}>
-                    Use Template
-                  </Button>
-                </div>
-              </Card>
-
-              <Card className="bg-white/10 border-white/20 p-6 backdrop-blur-lg hover:scale-105 transition-transform duration-300">
-                <div className="text-center">
-                  <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
-                    <BookOpen className="w-8 h-8 text-white" />
-                  </div>
-                  <h3 className="text-lg font-bold text-white mb-2" style={{ fontFamily: 'Bethaine, Arial, sans-serif' }}>
-                    NEET Preparation
-                  </h3>
-                  <p className="text-sm text-gray-300 mb-4">10 hours daily, 3 subjects</p>
-                  <Button className="w-full text-white border-0 rounded-full" style={{ background: 'linear-gradient(135deg, rgb(147, 51, 234), rgb(236, 72, 153))' }}>
-                    Use Template
-                  </Button>
-                </div>
-              </Card>
-
-              <Card className="bg-white/10 border-white/20 p-6 backdrop-blur-lg hover:scale-105 transition-transform duration-300">
-                <div className="text-center">
-                  <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center">
-                    <Award className="w-8 h-8 text-white" />
-                  </div>
-                  <h3 className="text-lg font-bold text-white mb-2" style={{ fontFamily: 'Bethaine, Arial, sans-serif' }}>
-                    UPSC Preparation
-                  </h3>
-                  <p className="text-sm text-gray-300 mb-4">12 hours daily, all subjects</p>
-                  <Button className="w-full text-white border-0 rounded-full" style={{ background: 'linear-gradient(135deg, rgb(34, 197, 94), rgb(16, 185, 129))' }}>
-                    Use Template
-                  </Button>
-                </div>
-              </Card>
-            </div>
-          </TabsContent>
+          
         </Tabs>
+        <Dialog open={questionOpen} onOpenChange={setQuestionOpen}>
+          <DialogContent className="bg-white/10 border border-white/20 backdrop-blur-lg text-white">
+            <DialogHeader>
+              <DialogTitle style={{ fontFamily: 'Bethaine, Arial, sans-serif' }}>Quick Check</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-3 text-sm text-gray-200">
+              <p>Did you actually complete this session's planned work?</p>
+              <ul className="list-disc pl-5 space-y-1">
+                <li>Reviewed the topic you planned</li>
+                <li>Spent at least 80% of the scheduled time</li>
+              </ul>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" className="text-white border-0 rounded-full"style={{ background: 'linear-gradient(135deg, rgb(17, 17, 17), rgb(12, 12, 12))' }} onClick={handleQuestionCancel}>
+                No
+              </Button>
+              <Button className="text-black border-0 rounded-full" style={{ background: 'linear-gradient(135deg, rgb(0, 0, 0), rgb(0, 0, 0))' }} onClick={handleQuestionConfirm}>
+                Yes, credit it
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );

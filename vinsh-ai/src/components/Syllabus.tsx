@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { Input } from "./ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import { Checkbox } from "./ui/checkbox";
+import Threads from "./Threads";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "./ui/collapsible";
 import {
   ArrowLeft,
@@ -386,9 +387,13 @@ export function Syllabus({ onBack }: SyllabusProps) {
 
   return (
     <div className="min-h-screen relative overflow-hidden" style={{ background: 'linear-gradient(to right, rgb(15, 23, 42), rgb(51, 65, 85))' }}>
-      {/* Background Pattern */}
+      {/* Threaded Background */}
       <div className="absolute inset-0 z-0">
-        <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg%20width%3D%2260%22%20height%3D%2260%22%20viewBox%3D%220%200%2060%2060%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Cg%20fill%3D%22none%22%20fill-rule%3D%22evenodd%22%3E%3Cg%20fill%3D%22%23ffffff%22%20fill-opacity%3D%220.05%22%3E%3Ccircle%20cx%3D%2230%22%20cy%3D%2230%22%20r%3D%221%22/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')] opacity-20"></div>
+        <Threads
+          amplitude={1}
+          distance={0}
+          enableMouseInteraction={true}
+        />
       </div>
 
       {/* Header */}
@@ -522,7 +527,7 @@ export function Syllabus({ onBack }: SyllabusProps) {
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-gray-300">Subjects</span>
-                      <span className="text-sm text-white">{exam.subjects}</span>
+                      <span className="text-sm text-white">{Array.isArray(exam.subjects) ? exam.subjects.length : exam.subjects}</span>
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-gray-300">Total Topics</span>
@@ -536,8 +541,7 @@ export function Syllabus({ onBack }: SyllabusProps) {
 
                   <Button
                     onClick={() => setSelectedExam(exam.id)}
-                    className="w-full text-white border-0 rounded-full"
-                    style={{ background: `linear-gradient(135deg, ${exam.color.split(' ')[0].replace('from-', '')}, ${exam.color.split(' ')[2].replace('to-', '')})` }}
+                    className={`w-full text-white border-0 rounded-full bg-gradient-to-r ${exam.color}`}
                   >
                     <Eye className="w-4 h-4 mr-2" />
                     View Syllabus
@@ -596,8 +600,7 @@ export function Syllabus({ onBack }: SyllabusProps) {
 
                       <Button
                         onClick={() => setSelectedSubject(subject.id)}
-                        className="w-full text-white border-0 rounded-full"
-                        style={{ background: `linear-gradient(135deg, ${subject.color.split(' ')[0].replace('from-', '')}, ${subject.color.split(' ')[2].replace('to-', '')})` }}
+                        className={`w-full text-white border-0 rounded-full bg-gradient-to-r ${subject.color}`}
                       >
                         <BookOpen className="w-4 h-4 mr-2" />
                         View Topics

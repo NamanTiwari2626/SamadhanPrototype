@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { Input } from "./ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import { Checkbox } from "./ui/checkbox";
+import Threads from "./Threads";
 import {
   ArrowLeft,
   Target,
@@ -16,31 +17,8 @@ import {
   Edit,
   Trash2,
   CheckCircle,
-  Star,
-  Award,
-  TrendingUp,
-  BarChart3,
-  BookOpen,
-  Brain,
-  Zap,
-  Flame,
-  Trophy,
-  Users,
-  BookMarked,
-  Lightbulb,
   ChevronRight,
   ChevronLeft,
-  Settings,
-  Bell,
-  RefreshCw,
-  Eye,
-  EyeOff,
-  Play,
-  Pause,
-  RotateCcw,
-  Flag,
-  Share2,
-  Download,
 } from "lucide-react";
 
 interface StudyPlannerProps {
@@ -155,48 +133,7 @@ export function StudyPlanner({ onBack }: StudyPlannerProps) {
     nextLevelPoints: 3000
   };
 
-  const achievements = [
-    {
-      id: 1,
-      title: "Goal Crusher",
-      description: "Complete 10 goals",
-      icon: Trophy,
-      color: "from-yellow-400 to-orange-500",
-      unlocked: true,
-      progress: 8,
-      target: 10
-    },
-    {
-      id: 2,
-      title: "Streak Master",
-      description: "Maintain 30-day streak",
-      icon: Flame,
-      color: "from-red-400 to-pink-500",
-      unlocked: false,
-      progress: 15,
-      target: 30
-    },
-    {
-      id: 3,
-      title: "High Achiever",
-      description: "Complete 5 high-priority goals",
-      icon: Star,
-      color: "from-purple-400 to-indigo-500",
-      unlocked: true,
-      progress: 5,
-      target: 5
-    },
-    {
-      id: 4,
-      title: "Consistent Learner",
-      description: "Study 7 days in a row",
-      icon: Calendar,
-      color: "from-green-400 to-emerald-500",
-      unlocked: true,
-      progress: 7,
-      target: 7
-    }
-  ];
+  // Achievements removed per request
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
@@ -284,9 +221,13 @@ export function StudyPlanner({ onBack }: StudyPlannerProps) {
 
   return (
     <div className="min-h-screen relative overflow-hidden" style={{ background: 'linear-gradient(to right, rgb(15, 23, 42), rgb(51, 65, 85))' }}>
-      {/* Background Pattern */}
+      {/* Threaded Background */}
       <div className="absolute inset-0 z-0">
-        <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg%20width%3D%2260%22%20height%3D%2260%22%20viewBox%3D%220%200%2060%2060%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Cg%20fill%3D%22none%22%20fill-rule%3D%22evenodd%22%3E%3Cg%20fill%3D%22%23ffffff%22%20fill-opacity%3D%220.05%22%3E%3Ccircle%20cx%3D%2230%22%20cy%3D%2230%22%20r%3D%221%22/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')] opacity-20"></div>
+        <Threads
+          amplitude={1}
+          distance={0}
+          enableMouseInteraction={true}
+        />
       </div>
 
       {/* Header */}
@@ -361,18 +302,12 @@ export function StudyPlanner({ onBack }: StudyPlannerProps) {
         </div>
 
         <Tabs value={selectedTab} onValueChange={setSelectedTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4 bg-white/10 border-white/20">
+          <TabsList className="grid w-full grid-cols-2 bg-white/10 border-white/20">
             <TabsTrigger value="goals" className="text-white data-[state=active]:bg-white/20">
               Goals
             </TabsTrigger>
             <TabsTrigger value="progress" className="text-white data-[state=active]:bg-white/20">
               Progress
-            </TabsTrigger>
-            <TabsTrigger value="achievements" className="text-white data-[state=active]:bg-white/20">
-              Achievements
-            </TabsTrigger>
-            <TabsTrigger value="analytics" className="text-white data-[state=active]:bg-white/20">
-              Analytics
             </TabsTrigger>
           </TabsList>
 
@@ -664,118 +599,7 @@ export function StudyPlanner({ onBack }: StudyPlannerProps) {
             </div>
           </TabsContent>
 
-          {/* Achievements Tab */}
-          <TabsContent value="achievements" className="space-y-6">
-            <h3 className="text-2xl font-bold text-white" style={{ fontFamily: 'Bethaine, Arial, sans-serif' }}>
-              Achievements & Badges
-            </h3>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {achievements.map((achievement) => (
-                <Card key={achievement.id} className={`bg-white/10 border-white/20 p-6 backdrop-blur-lg ${
-                  achievement.unlocked ? 'ring-2 ring-yellow-400/50' : ''
-                }`}>
-                  <div className="text-center">
-                    <div className={`w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br ${achievement.color} flex items-center justify-center ${
-                      !achievement.unlocked ? 'opacity-50' : ''
-                    }`}>
-                      <achievement.icon className="w-8 h-8 text-white" />
-                    </div>
-                    <h4 className="text-lg font-bold text-white mb-2" style={{ fontFamily: 'Bethaine, Arial, sans-serif' }}>
-                      {achievement.title}
-                    </h4>
-                    <p className="text-sm text-gray-300 mb-3">{achievement.description}</p>
-                    
-                    {achievement.unlocked ? (
-                      <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
-                        <CheckCircle className="w-3 h-3 mr-1" />
-                        Unlocked
-                      </Badge>
-                    ) : (
-                      <div className="space-y-2">
-                        <div className="flex justify-between items-center text-sm">
-                          <span className="text-gray-300">Progress</span>
-                          <span className="text-white">{achievement.progress}/{achievement.target}</span>
-                        </div>
-                        <Progress value={(achievement.progress / achievement.target) * 100} className="h-2" />
-                      </div>
-                    )}
-                  </div>
-                </Card>
-              ))}
-            </div>
-          </TabsContent>
-
-          {/* Analytics Tab */}
-          <TabsContent value="analytics" className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              <Card className="bg-white/10 border-white/20 p-6 backdrop-blur-lg">
-                <h3 className="text-lg font-bold text-white mb-4" style={{ fontFamily: 'Bethaine, Arial, sans-serif' }}>
-                  Goal Categories
-                </h3>
-                <div className="space-y-3">
-                  {['daily', 'weekly', 'monthly', 'long-term'].map((category) => {
-                    const count = goals.filter(g => g.category === category).length;
-                    const completed = goals.filter(g => g.category === category && g.completed).length;
-                    return (
-                      <div key={category}>
-                        <div className="flex justify-between items-center mb-1">
-                          <span className="text-sm text-gray-300 capitalize">{category}</span>
-                          <span className="text-sm text-white">{completed}/{count}</span>
-                        </div>
-                        <Progress value={count > 0 ? (completed / count) * 100 : 0} className="h-2" />
-                      </div>
-                    );
-                  })}
-                </div>
-              </Card>
-
-              <Card className="bg-white/10 border-white/20 p-6 backdrop-blur-lg">
-                <h3 className="text-lg font-bold text-white mb-4" style={{ fontFamily: 'Bethaine, Arial, sans-serif' }}>
-                  Priority Distribution
-                </h3>
-                <div className="space-y-3">
-                  {['high', 'medium', 'low'].map((priority) => {
-                    const count = goals.filter(g => g.priority === priority).length;
-                    const completed = goals.filter(g => g.priority === priority && g.completed).length;
-                    return (
-                      <div key={priority}>
-                        <div className="flex justify-between items-center mb-1">
-                          <span className="text-sm text-gray-300 capitalize">{priority}</span>
-                          <span className="text-sm text-white">{completed}/{count}</span>
-                        </div>
-                        <Progress value={count > 0 ? (completed / count) * 100 : 0} className="h-2" />
-                      </div>
-                    );
-                  })}
-                </div>
-              </Card>
-
-              <Card className="bg-white/10 border-white/20 p-6 backdrop-blur-lg">
-                <h3 className="text-lg font-bold text-white mb-4" style={{ fontFamily: 'Bethaine, Arial, sans-serif' }}>
-                  Recent Activity
-                </h3>
-                <div className="space-y-3">
-                  <div className="flex items-center gap-3">
-                    <CheckCircle className="w-4 h-4 text-green-400" />
-                    <span className="text-sm text-gray-300">Completed "Daily Study Hours" goal</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <Star className="w-4 h-4 text-yellow-400" />
-                    <span className="text-sm text-gray-300">Earned "Goal Crusher" achievement</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <Target className="w-4 h-4 text-blue-400" />
-                    <span className="text-sm text-gray-300">Created new weekly goal</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <Flame className="w-4 h-4 text-orange-400" />
-                    <span className="text-sm text-gray-300">Extended streak to 15 days</span>
-                  </div>
-                </div>
-              </Card>
-            </div>
-          </TabsContent>
+          
         </Tabs>
       </div>
     </div>

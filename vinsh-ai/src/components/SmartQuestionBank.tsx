@@ -6,38 +6,16 @@ import { Progress } from "./ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { Input } from "./ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
+import Threads from "./Threads";
 import {
   ArrowLeft,
   BookOpen,
   Search,
-  Filter,
-  Clock,
-  CheckCircle,
-  XCircle,
-  Star,
-  Target,
-  TrendingUp,
-  BarChart3,
-  Zap,
   Brain,
   Calculator,
   Atom,
   Globe,
-  BookMarked,
-  Award,
-  Timer,
-  RefreshCw,
-  Eye,
   Book,
-  FileText,
-  Lightbulb,
-  ChevronRight,
-  Play,
-  Pause,
-  RotateCcw,
-  Flag,
-  Bookmark,
-  Share2,
 } from "lucide-react";
 
 interface SmartQuestionBankProps {
@@ -48,10 +26,8 @@ export function SmartQuestionBank({ onBack }: SmartQuestionBankProps) {
   const [selectedTab, setSelectedTab] = useState("subjects");
   const [selectedSubject, setSelectedSubject] = useState("");
   const [selectedDifficulty, setSelectedDifficulty] = useState("");
-  const [currentQuestion, setCurrentQuestion] = useState(0);
-  const [selectedAnswer, setSelectedAnswer] = useState("");
-  const [showAnswer, setShowAnswer] = useState(false);
-  const [isQuizMode, setIsQuizMode] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [visibleCounts, setVisibleCounts] = useState<Record<string, number>>({});
 
   const subjects = [
     {
@@ -122,70 +98,125 @@ export function SmartQuestionBank({ onBack }: SmartQuestionBankProps) {
     { id: "hard", name: "Hard", color: "text-red-400", bgColor: "bg-red-500/20" }
   ];
 
-  const sampleQuestions = [
-    {
-      id: 1,
-      question: "What is the derivative of x² + 3x + 2?",
-      options: ["2x + 3", "x + 3", "2x + 2", "x² + 3"],
-      correct: "2x + 3",
-      explanation: "The derivative of x² is 2x, derivative of 3x is 3, and derivative of constant 2 is 0. So, d/dx(x² + 3x + 2) = 2x + 3",
-      difficulty: "medium",
-      subject: "mathematics",
-      topic: "Calculus"
-    },
-    {
-      id: 2,
-      question: "Which of the following is not a noble gas?",
-      options: ["Helium", "Neon", "Chlorine", "Argon"],
-      correct: "Chlorine",
-      explanation: "Noble gases are elements in group 18 of the periodic table. Chlorine is in group 17 (halogens), not group 18.",
-      difficulty: "easy",
-      subject: "chemistry",
-      topic: "Periodic Table"
-    },
-    {
-      id: 3,
-      question: "What is the SI unit of electric current?",
-      options: ["Volt", "Ampere", "Ohm", "Watt"],
-      correct: "Ampere",
-      explanation: "The SI unit of electric current is Ampere (A), named after André-Marie Ampère.",
-      difficulty: "easy",
-      subject: "physics",
-      topic: "Electricity"
-    }
-  ];
+  // Frequently repeated topics/questions bank with counts and answers
+  const frequentBank: Record<string, { id: string; text: string; times: number; answer: string }[]> = {
+    mathematics: [
+      { id: "quad-roots", text: "Sum and product of roots of quadratic equation", times: 18, answer: "For ax^2+bx+c=0: sum = -b/a, product = c/a." },
+      { id: "def-int-basic", text: "Basic properties of definite integrals", times: 15, answer: "∫_a^b f(x) dx = F(b)-F(a); if f is even: ∫_-a^a f = 2∫_0^a f; if odd: 0." },
+      { id: "limits-lhopital", text: "Indeterminate limits using L'Hôpital's Rule", times: 12, answer: "If limit yields 0/0 or ∞/∞ and f,g differentiable near a: lim f/g = lim f'/g' (when latter exists)." },
+      { id: "trig-identities", text: "Fundamental trigonometric identities", times: 14, answer: "sin²θ + cos²θ = 1, tan θ = sin θ/cos θ, sec²θ - tan²θ = 1" },
+      { id: "derivative-rules", text: "Chain rule and product rule applications", times: 16, answer: "Chain: (f(g(x)))' = f'(g(x))·g'(x); Product: (fg)' = f'g + fg'" },
+      { id: "matrix-determinant", text: "Properties of determinants", times: 11, answer: "det(AB) = det(A)det(B); if row/column all zeros, det = 0" }
+    ],
+    physics: [
+      { id: "proj-range", text: "Range of projectile and angle relations", times: 14, answer: "R = (u^2 sin 2θ)/g; for same range: θ and 90°-θ give equal R." },
+      { id: "ohms-law", text: "Equivalent resistance in series/parallel", times: 16, answer: "Series: R_eq = ΣR_i; Parallel: 1/R_eq = Σ(1/R_i)." },
+      { id: "wave-equation", text: "Wave speed and frequency relationship", times: 13, answer: "v = fλ where v is speed, f is frequency, λ is wavelength" },
+      { id: "energy-conservation", text: "Conservation of mechanical energy", times: 12, answer: "KE + PE = constant in conservative force fields" },
+      { id: "doppler-effect", text: "Doppler shift for sound waves", times: 10, answer: "f' = f(v ± v_observer)/(v ± v_source)" }
+    ],
+    chemistry: [
+      { id: "lechat", text: "Le Châtelier's principle applications", times: 13, answer: "System shifts to oppose change: inc. pressure favors fewer moles; inc. temp favors endothermic direction." },
+      { id: "pka-ph", text: "pH, pKa and buffer calculations", times: 11, answer: "Henderson–Hasselbalch: pH = pKa + log([A-]/[HA])." },
+      { id: "orbital-hybridization", text: "Types of hybridization in organic molecules", times: 9, answer: "sp³: tetrahedral, sp²: trigonal planar, sp: linear" },
+      { id: "reaction-kinetics", text: "Rate law and order of reaction", times: 15, answer: "Rate = k[A]^m[B]^n; order = m+n" },
+      { id: "electrochemistry", text: "Electrode potential and cell EMF", times: 8, answer: "E°cell = E°cathode - E°anode; ΔG° = -nFE°" }
+    ],
+    biology: [
+      { id: "dna-replication", text: "DNA replication enzymes and direction", times: 10, answer: "Occurs 5'→3'; DNA polymerase, helicase, primase; leading/lagging (Okazaki fragments)." },
+      { id: "photosynthesis", text: "Light and dark reactions of photosynthesis", times: 12, answer: "Light: H₂O → O₂ + ATP + NADPH; Dark: CO₂ + ATP + NADPH → glucose" },
+      { id: "protein-synthesis", text: "Transcription and translation process", times: 11, answer: "DNA → mRNA (transcription) → protein (translation at ribosomes)" },
+      { id: "mendel-laws", text: "Mendelian inheritance patterns", times: 9, answer: "Law of segregation: alleles separate; Law of independent assortment" },
+      { id: "enzyme-kinetics", text: "Enzyme activity and factors affecting it", times: 8, answer: "Rate affected by temp, pH, substrate concentration, competitive/non-competitive inhibition" }
+    ],
+    english: [
+      { id: "subject-verb", text: "Subject–verb agreement pitfalls", times: 9, answer: "Singular subjects take singular verbs; phrases between subject and verb do not affect agreement." },
+      { id: "active-passive", text: "Active and passive voice conversion", times: 8, answer: "Active: Subject + Verb + Object → Passive: Object + be + past participle + by + Subject" },
+      { id: "tenses-usage", text: "Perfect tense usage and formation", times: 7, answer: "Present perfect: has/have + past participle; Past perfect: had + past participle" },
+      { id: "prepositions", text: "Common preposition usage errors", times: 6, answer: "Different from (not than); in time vs on time; at/on/in for time and place" },
+      { id: "reported-speech", text: "Direct to indirect speech conversion", times: 10, answer: "Tense shifts back: present→past, past→past perfect; pronouns and time expressions change" }
+    ],
+    "general-knowledge": [
+      { id: "indian-constitution", text: "Key articles of Indian Constitution (e.g., Article 21)", times: 8, answer: "Art. 21: Protection of life and personal liberty; no person deprived except per procedure established by law." },
+      { id: "world-capitals", text: "Capital cities of major countries", times: 12, answer: "France-Paris, Germany-Berlin, Australia-Canberra, Canada-Ottawa, Brazil-Brasília" },
+      { id: "indian-geography", text: "Rivers, mountains, and states of India", times: 11, answer: "Ganges-Ganga, Himalayas northern border, 28 states + 8 union territories" },
+      { id: "current-affairs", text: "Recent government schemes and policies", times: 9, answer: "PM-KISAN, Ayushman Bharat, Digital India, Make in India initiatives" },
+      { id: "sports-awards", text: "Major sports awards and achievements", times: 7, answer: "Bharat Ratna (highest), Padma awards, Khel Ratna, Arjuna Award for sports" }
+    ]
+  };
 
-  const userStats = {
-    totalQuestions: 12000,
-    completed: 3200,
-    accuracy: 78,
-    streak: 15,
-    rank: 1250,
-    points: 15800
+  const getFrequentItems = (subjectId: string) => {
+    const base = frequentBank[subjectId] || [];
+    if (base.length >= 30) return base.slice(0, 30);
+    const generated: { id: string; text: string; times: number; answer: string }[] = [...base];
+    let i = 0;
+    while (generated.length < 30) {
+      const seed = base[i % (base.length || 1)] || {
+        id: `gen-${i}`,
+        text: `Important topic ${i + 1}`,
+        times: 7 + ((i * 3) % 11),
+        answer: "Review the standard solution approach and key formulae.",
+      };
+      generated.push({
+        id: `${seed.id}-${generated.length + 1}`,
+        text: seed.text,
+        times: seed.times,
+        answer: seed.answer,
+      });
+      i++;
+    }
+    return generated.slice(0, 30);
+  };
+
+  const getVisibleCount = (subjectId: string) => (visibleCounts[subjectId] ?? 5); // Start with more items
+
+  const handleListScroll = (subjectId: string) => (e: React.UIEvent<HTMLDivElement>) => {
+    const target = e.currentTarget;
+    const { scrollTop, clientHeight, scrollHeight } = target;
+    
+    // More sensitive scroll detection - trigger when 80% scrolled
+    if (scrollTop + clientHeight >= scrollHeight * 0.8) {
+      setVisibleCounts(prev => {
+        const current = prev[subjectId] ?? 5;
+        const max = getFrequentItems(subjectId).length;
+        const next = Math.min(current + 5, max); // Load 5 more at a time
+        if (next === current) return prev;
+        return { ...prev, [subjectId]: next };
+      });
+    }
   };
 
   const getProgressPercentage = (completed: number, total: number) => {
     return (completed / total) * 100;
   };
 
-  const getDifficultyColor = (difficulty: string) => {
-    switch (difficulty) {
-      case "easy": return "text-green-400";
-      case "medium": return "text-yellow-400";
-      case "hard": return "text-red-400";
-      default: return "text-gray-400";
-    }
-  };
-
   return (
     <div className="min-h-screen relative overflow-hidden" style={{ background: 'linear-gradient(to right, rgb(15, 23, 42), rgb(51, 65, 85))' }}>
-      {/* Background Pattern */}
+      {/* Threaded Background */}
       <div className="absolute inset-0 z-0">
-        <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg%20width%3D%2260%22%20height%3D%2260%22%20viewBox%3D%220%200%2060%2060%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Cg%20fill%3D%22none%22%20fill-rule%3D%22evenodd%22%3E%3Cg%20fill%3D%22%23ffffff%22%20fill-opacity%3D%220.05%22%3E%3Ccircle%20cx%3D%2230%22%20cy%3D%2230%22%20r%3D%221%22/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')] opacity-20"></div>
+        <Threads
+          amplitude={1}
+          distance={0}
+          enableMouseInteraction={true}
+        />
       </div>
 
       {/* Header */}
       <div className="relative z-20 p-6">
+        <style>{`
+          .custom-scrollable {
+            scrollbar-width: none; /* Firefox */
+            -ms-overflow-style: none; /* IE and Edge */
+          }
+          .custom-scrollable::-webkit-scrollbar {
+            display: none; /* Chrome, Safari, Opera */
+          }
+          .custom-scrollable {
+            overflow-y: auto;
+            overscroll-behavior: contain;
+          }
+        `}</style>
+        
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-4">
             <Button
@@ -215,50 +246,10 @@ export function SmartQuestionBank({ onBack }: SmartQuestionBankProps) {
           </div>
         </div>
 
-        {/* User Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
-          <Card className="bg-white/10 border-white/20 p-4 text-center backdrop-blur-lg">
-            <div className="text-2xl font-bold text-white mb-1" style={{ fontFamily: 'Bethaine, Arial, sans-serif' }}>
-              {userStats.completed.toLocaleString()}
-            </div>
-            <div className="text-sm text-gray-300">Questions Solved</div>
-          </Card>
-          <Card className="bg-white/10 border-white/20 p-4 text-center backdrop-blur-lg">
-            <div className="text-2xl font-bold text-white mb-1" style={{ fontFamily: 'Bethaine, Arial, sans-serif' }}>
-              {userStats.accuracy}%
-            </div>
-            <div className="text-sm text-gray-300">Accuracy</div>
-          </Card>
-          <Card className="bg-white/10 border-white/20 p-4 text-center backdrop-blur-lg">
-            <div className="text-2xl font-bold text-white mb-1" style={{ fontFamily: 'Bethaine, Arial, sans-serif' }}>
-              {userStats.streak}
-            </div>
-            <div className="text-sm text-gray-300">Day Streak</div>
-          </Card>
-          <Card className="bg-white/10 border-white/20 p-4 text-center backdrop-blur-lg">
-            <div className="text-2xl font-bold text-white mb-1" style={{ fontFamily: 'Bethaine, Arial, sans-serif' }}>
-              #{userStats.rank}
-            </div>
-            <div className="text-sm text-gray-300">Rank</div>
-          </Card>
-          <Card className="bg-white/10 border-white/20 p-4 text-center backdrop-blur-lg">
-            <div className="text-2xl font-bold text-white mb-1" style={{ fontFamily: 'Bethaine, Arial, sans-serif' }}>
-              {userStats.points.toLocaleString()}
-            </div>
-            <div className="text-sm text-gray-300">Points</div>
-          </Card>
-        </div>
-
         <Tabs value={selectedTab} onValueChange={setSelectedTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3 bg-white/10 border-white/20">
-            <TabsTrigger value="subjects" className="text-white data-[state=active]:bg-white/20">
+          <TabsList className="w-full flex justify-center gap-3 bg-transparent">
+            <TabsTrigger value="subjects" className="text-white rounded-full px-5 py-2 bg-white/10 border border-white/20 backdrop-blur-lg hover:bg-white/15 data-[state=active]:bg-white/20 data-[state=active]:border-white/30 transition">
               Subjects
-            </TabsTrigger>
-            <TabsTrigger value="practice" className="text-white data-[state=active]:bg-white/20">
-              Practice Mode
-            </TabsTrigger>
-            <TabsTrigger value="quiz" className="text-white data-[state=active]:bg-white/20">
-              Quiz Mode
             </TabsTrigger>
           </TabsList>
 
@@ -269,7 +260,9 @@ export function SmartQuestionBank({ onBack }: SmartQuestionBankProps) {
               <div className="flex flex-col md:flex-row gap-4">
                 <div className="flex-1">
                   <Input
-                    placeholder="Search questions or topics..."
+                    placeholder="Search subjects or topics..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
                     className="bg-white/10 border-white/20 text-white placeholder:text-white/60"
                   />
                 </div>
@@ -305,227 +298,101 @@ export function SmartQuestionBank({ onBack }: SmartQuestionBankProps) {
             </Card>
 
             {/* Subjects Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {subjects.map((subject) => (
-                <Card key={subject.id} className="bg-white/10 border-white/20 p-6 backdrop-blur-lg hover:scale-105 transition-transform duration-300">
-                  <div className="flex items-center gap-4 mb-4">
-                    <div className={`p-3 rounded-xl bg-gradient-to-br ${subject.color}`}>
-                      <subject.icon className="w-6 h-6 text-white" />
-                    </div>
-                    <div>
-                      <h3 className="text-xl font-bold text-white" style={{ fontFamily: 'Bethaine, Arial, sans-serif' }}>
-                        {subject.name}
-                      </h3>
-                      <p className="text-sm text-gray-300">{subject.questions} Questions</p>
-                    </div>
-                  </div>
-
-                  <div className="space-y-3 mb-4">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-gray-300">Progress</span>
-                      <span className="text-sm text-white">{subject.completed}/{subject.questions}</span>
-                    </div>
-                    <Progress value={getProgressPercentage(subject.completed, subject.questions)} className="h-2" />
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-gray-300">Accuracy</span>
-                      <span className="text-sm text-white">{subject.accuracy}%</span>
-                    </div>
-                  </div>
-
-                  <div className="mb-4">
-                    <h4 className="text-sm font-semibold text-white mb-2" style={{ fontFamily: 'Bethaine, Arial, sans-serif' }}>
-                      Topics Covered:
-                    </h4>
-                    <div className="flex flex-wrap gap-1">
-                      {subject.topics.slice(0, 3).map((topic, index) => (
-                        <Badge key={index} className="bg-white/10 text-white border-white/20 text-xs">
-                          {topic}
-                        </Badge>
-                      ))}
-                      {subject.topics.length > 3 && (
-                        <Badge className="bg-white/10 text-white border-white/20 text-xs">
-                          +{subject.topics.length - 3} more
-                        </Badge>
-                      )}
-                    </div>
-                  </div>
-
-                  <Button className="w-full text-white border-0 rounded-full" style={{ background: `linear-gradient(135deg, ${subject.color.split(' ')[0].replace('from-', '')}, ${subject.color.split(' ')[2].replace('to-', '')})` }}>
-                    <Play className="w-4 h-4 mr-2" />
-                    Start Practice
-                  </Button>
-                </Card>
-              ))}
-            </div>
-          </TabsContent>
-
-          {/* Practice Mode Tab */}
-          <TabsContent value="practice" className="space-y-6">
-            <Card className="bg-white/10 border-white/20 p-6 backdrop-blur-lg">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-2xl font-bold text-white" style={{ fontFamily: 'Bethaine, Arial, sans-serif' }}>
-                  Practice Questions
-                </h3>
-                <div className="flex items-center gap-2">
-                  <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30">
-                    Question {currentQuestion + 1} of {sampleQuestions.length}
-                  </Badge>
-                </div>
-              </div>
-
-              {sampleQuestions.length > 0 && (
-                <div className="space-y-6">
-                  {/* Question */}
-                  <div className="bg-white/5 border border-white/10 rounded-lg p-6">
-                    <div className="flex items-center gap-2 mb-4">
-                      <Badge className={`${getDifficultyColor(sampleQuestions[currentQuestion].difficulty)} bg-opacity-20`}>
-                        {sampleQuestions[currentQuestion].difficulty.charAt(0).toUpperCase() + sampleQuestions[currentQuestion].difficulty.slice(1)}
-                      </Badge>
-                      <Badge className="bg-white/10 text-white border-white/20">
-                        {sampleQuestions[currentQuestion].topic}
-                      </Badge>
-                    </div>
-                    <h4 className="text-lg font-semibold text-white mb-4" style={{ fontFamily: 'Bethaine, Arial, sans-serif' }}>
-                      {sampleQuestions[currentQuestion].question}
-                    </h4>
-                    
-                    {/* Options */}
-                    <div className="space-y-3">
-                      {sampleQuestions[currentQuestion].options.map((option, index) => (
-                        <button
-                          key={index}
-                          className={`w-full p-4 text-left rounded-lg border transition-all duration-200 ${
-                            selectedAnswer === option
-                              ? 'border-blue-400 bg-blue-500/20 text-white'
-                              : 'border-white/20 bg-white/5 text-gray-200 hover:bg-white/10'
-                          }`}
-                          onClick={() => setSelectedAnswer(option)}
-                        >
-                          <div className="flex items-center gap-3">
-                            <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
-                              selectedAnswer === option ? 'border-blue-400 bg-blue-400' : 'border-white/40'
-                            }`}>
-                              {selectedAnswer === option && <CheckCircle className="w-4 h-4 text-white" />}
-                            </div>
-                            <span className="font-medium">{option}</span>
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Answer and Explanation */}
-                  {showAnswer && (
-                    <div className="bg-white/5 border border-white/10 rounded-lg p-6">
-                      <h5 className="text-lg font-semibold text-white mb-3" style={{ fontFamily: 'Bethaine, Arial, sans-serif' }}>
-                        Explanation
-                      </h5>
-                      <p className="text-gray-200 mb-4" style={{ fontFamily: 'Bethaine, Arial, sans-serif' }}>
-                        {sampleQuestions[currentQuestion].explanation}
-                      </p>
-                      <div className="flex items-center gap-2">
-                        <CheckCircle className="w-5 h-5 text-green-400" />
-                        <span className="text-green-400 font-medium">Correct Answer: {sampleQuestions[currentQuestion].correct}</span>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Action Buttons */}
-                  <div className="flex flex-wrap gap-3">
-                    <Button
-                      onClick={() => setShowAnswer(!showAnswer)}
-                      className="text-white border-0 rounded-full"
-                      style={{ background: 'linear-gradient(135deg, rgb(59, 130, 246), rgb(147, 51, 234))' }}
-                    >
-                      <Eye className="w-4 h-4 mr-2" />
-                      {showAnswer ? 'Hide' : 'Show'} Answer
-                    </Button>
-                    <Button
-                      onClick={() => {
-                        setCurrentQuestion((prev) => (prev + 1) % sampleQuestions.length);
-                        setSelectedAnswer("");
-                        setShowAnswer(false);
-                      }}
-                      className="text-white border-0 rounded-full"
-                      style={{ background: 'linear-gradient(135deg, rgb(34, 197, 94), rgb(16, 185, 129))' }}
-                    >
-                      <ChevronRight className="w-4 h-4 mr-2" />
-                      Next Question
-                    </Button>
-                    <Button
-                      variant="outline"
-                      className="border-white/20 text-white hover:bg-white/10"
-                    >
-                      <Bookmark className="w-4 h-4 mr-2" />
-                      Bookmark
-                    </Button>
-                    <Button
-                      variant="outline"
-                      className="border-white/20 text-white hover:bg-white/10"
-                    >
-                      <Flag className="w-4 h-4 mr-2" />
-                      Report
-                    </Button>
-                  </div>
-                </div>
-              )}
-            </Card>
-          </TabsContent>
-
-          {/* Quiz Mode Tab */}
-          <TabsContent value="quiz" className="space-y-6">
-            <Card className="bg-white/10 border-white/20 p-6 backdrop-blur-lg">
-              <h3 className="text-2xl font-bold text-white mb-6" style={{ fontFamily: 'Bethaine, Arial, sans-serif' }}>
-                Quiz Mode
-              </h3>
+            {(() => {
+              const query = searchQuery.trim().toLowerCase();
+              const filtered = subjects
+                .filter((s) => {
+                  const subjectFilterOk = selectedSubject ? s.id === selectedSubject : true;
+                  if (!subjectFilterOk) return false;
+                  if (!query) return true;
+                  const nameMatch = s.name.toLowerCase().includes(query);
+                  const topicMatch = s.topics.some((t) => t.toLowerCase().includes(query));
+                  const freqMatch = getFrequentItems(s.id).some((it) => it.text.toLowerCase().includes(query));
+                  return nameMatch || topicMatch || freqMatch;
+                })
+                .map((s) => {
+                  const query = searchQuery.trim().toLowerCase();
+                  const nameMatch = query ? (s.name.toLowerCase().includes(query) ? 2 : 0) : 0;
+                  const topicMatch = query ? (s.topics.some((t) => t.toLowerCase().includes(query)) ? 3 : 0) : 0;
+                  const freqMatch = query ? (getFrequentItems(s.id).some((it) => it.text.toLowerCase().includes(query)) ? 4 : 0) : 0;
+                  const score = nameMatch + topicMatch + freqMatch;
+                  return { s, score };
+                })
+                .sort((a, b) => {
+                  if (b.score !== a.score) return b.score - a.score;
+                  return a.s.name.localeCompare(b.s.name);
+                })
+                .map(({ s }) => s);
               
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <Card className="bg-white/5 border-white/10 p-6">
-                  <div className="text-center">
-                    <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center">
-                      <Timer className="w-8 h-8 text-white" />
-                    </div>
-                    <h4 className="text-lg font-semibold text-white mb-2" style={{ fontFamily: 'Bethaine, Arial, sans-serif' }}>
-                      Quick Quiz
-                    </h4>
-                    <p className="text-sm text-gray-300 mb-4">10 questions, 15 minutes</p>
-                    <Button className="w-full text-white border-0 rounded-full" style={{ background: 'linear-gradient(135deg, rgb(59, 130, 246), rgb(6, 182, 212))' }}>
-                      Start Quiz
-                    </Button>
-                  </div>
-                </Card>
+              return (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {filtered.map((subject) => (
+                    <Card key={subject.id} className="bg-white/10 border-white/20 p-6 backdrop-blur-lg hover:scale-105 transition-transform duration-300 relative">
+                      <Button
+                        onClick={() => setSelectedSubject(subject.id)}
+                        className="absolute top-4 right-4 text-white border-0 rounded-full px-3 py-1 text-xs shadow-md hover:opacity-90"
+                        style={{ background: 'linear-gradient(135deg, rgb(99, 102, 241), rgb(139, 92, 246))' }}
+                        title="Open Question Bank"
+                      >
+                        <BookOpen className="w-3 h-3 mr-1" />
+                        Open
+                      </Button>
+                      
+                      <div className="flex items-center gap-4 mb-4">
+                        <div className={`p-3 rounded-xl bg-gradient-to-br ${subject.color}`}>
+                          <subject.icon className="w-6 h-6 text-white" />
+                        </div>
+                        <div>
+                          <h3 className="text-xl font-bold text-white" style={{ fontFamily: 'Bethaine, Arial, sans-serif' }}>
+                            {subject.name}
+                          </h3>
+                          <p className="text-sm text-gray-300">{subject.questions} Questions</p>
+                        </div>
+                      </div>
 
-                <Card className="bg-white/5 border-white/10 p-6">
-                  <div className="text-center">
-                    <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
-                      <Target className="w-8 h-8 text-white" />
-                    </div>
-                    <h4 className="text-lg font-semibold text-white mb-2" style={{ fontFamily: 'Bethaine, Arial, sans-serif' }}>
-                      Subject Quiz
-                    </h4>
-                    <p className="text-sm text-gray-300 mb-4">50 questions, 60 minutes</p>
-                    <Button className="w-full text-white border-0 rounded-full" style={{ background: 'linear-gradient(135deg, rgb(147, 51, 234), rgb(236, 72, 153))' }}>
-                      Start Quiz
-                    </Button>
-                  </div>
-                </Card>
-
-                <Card className="bg-white/5 border-white/10 p-6">
-                  <div className="text-center">
-                    <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center">
-                      <Award className="w-8 h-8 text-white" />
-                    </div>
-                    <h4 className="text-lg font-semibold text-white mb-2" style={{ fontFamily: 'Bethaine, Arial, sans-serif' }}>
-                      Mock Test
-                    </h4>
-                    <p className="text-sm text-gray-300 mb-4">100 questions, 3 hours</p>
-                    <Button className="w-full text-white border-0 rounded-full" style={{ background: 'linear-gradient(135deg, rgb(34, 197, 94), rgb(16, 185, 129))' }}>
-                      Start Test
-                    </Button>
-                  </div>
-                </Card>
-              </div>
-            </Card>
+                      <div className="space-y-3 mb-4">
+                        <h4 className="text-sm font-semibold text-white" style={{ fontFamily: 'Bethaine, Arial, sans-serif' }}>
+                          Frequently Repeated
+                        </h4>
+                        <div 
+                          className="custom-scrollable space-y-2 max-h-80 overflow-y-auto pr-2"
+                          onScroll={handleListScroll(subject.id)}
+                          style={{ 
+                            minHeight: '200px',
+                            maxHeight: '320px'
+                          }}
+                        >
+                          {getFrequentItems(subject.id).slice(0, getVisibleCount(subject.id)).map((item, index) => (
+                            <div key={item.id} className="p-3 rounded-lg bg-white/5 border border-white/10">
+                              <div className="flex items-start justify-between gap-3">
+                                <div className="text-sm text-gray-100 flex-1">{item.text}</div>
+                                <Badge className="bg-white/10 text-white border-white/20 text-xs shrink-0">
+                                  {item.times}x
+                                </Badge>
+                              </div>
+                              <div className="mt-2 text-xs text-gray-300">
+                                <span className="text-gray-400">Answer: </span>
+                                {item.answer}
+                              </div>
+                            </div>
+                          ))}
+                          {getFrequentItems(subject.id).length === 0 && (
+                            <div className="text-xs text-gray-400 p-4 text-center">
+                              No frequent items available.
+                            </div>
+                          )}
+                          {getVisibleCount(subject.id) < getFrequentItems(subject.id).length && (
+                            <div className="text-xs text-gray-400 p-2 text-center">
+                              Scroll down for more items...
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+              );
+            })()}
           </TabsContent>
         </Tabs>
       </div>
