@@ -47,9 +47,10 @@ import {
 // Fallback import path for Vite static asset
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
-import globeImage from "../assets/ef6432358e70cd07cef418bda499a8b4438f8bd9.png";
+// import globeImage from "../assets/ef6432358e70cd07cef418bda499a8b4438f8bd9.png";
 import Threads from "./Threads";
 import RotatingText from "./RotatingText";
+import MagneticPaint, { defaultParams as magneticDefault } from "./MagneticPaint";
 import { Counseling } from "./Counseling";
 
 interface Message {
@@ -89,6 +90,19 @@ export function ResponsiveAIAssistant({ onNavigateToDashboard, onNavigate }: Res
     useState<SpeechSynthesis | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const bodoniUrl = new URL('../assets/BodoniFLF-Roman.ttf', import.meta.url).toString();
+  const thoughts: string[] = [
+    "Small daily targets beat big plans. Revise, practice, repeat.",
+    "Active recall > passive reading. Test yourself to remember more.",
+    "Time-box sessions (50/10). Consistency compounds like interest.",
+    "Analyze mistakes. They’re your fastest path to improvement.",
+    "Prioritize high‑yield topics first; then deepen selectively.",
+    "Simulate exam conditions weekly to build endurance.",
+    "Sleep, nutrition, and movement are performance multipliers.",
+    "Track progress. What gets measured gets managed.",
+  ];
+  const [thoughtIndex, setThoughtIndex] = useState(0);
+  const nextThought = () => setThoughtIndex((i) => (i + 1) % thoughts.length);
 
   // Mock user analytics data
   const userStats = {
@@ -865,24 +879,36 @@ export function ResponsiveAIAssistant({ onNavigateToDashboard, onNavigate }: Res
 
         {/* Rotating Text at Same Level as Header */}
         <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-50 flex items-center gap-4">
+          {/* Load Bodoni font locally for rotating text */}
+          <style>{`
+            @font-face {
+              font-family: 'BodoniFLF-Roman';
+              src: url('${bodoniUrl}') format('truetype');
+              font-weight: normal;
+              font-style: normal;
+              font-display: swap;
+            }
+          `}</style>
           {/* VINSH-AI Text */}
-          <div className="text-white font-bold text-xl tracking-wider" style={{ fontFamily: 'Bethaine, Arial, sans-serif' }}>
-            VINSH-AI IS
+          <div className="text-white font-bold text-xl tracking-wider" style={{ fontFamily: 'Dune_Rise' }}>
+            Vinsh-AI Is
           </div>
           
           {/* Rotating Text with Dynamic Box */}
-          <RotatingText
-            texts={['Teacher', 'Friend', 'Easy', 'Understandable']}
-            mainClassName="px-2 py-1 rounded-lg shadow-lg border-2 border-gray-300"
-            staggerFrom={"last"}
-            initial={{ y: "100%" }}
-            animate={{ y: 0 }}
-            exit={{ y: "-120%" }}
-            staggerDuration={0.025}
-            splitLevelClassName="overflow-hidden pb-0.5 sm:pb-1 md:pb-1"
-            transition={{ type: "spring", damping: 30, stiffness: 400 }}
-            rotationInterval={2000}
-          />
+          <div style={{ fontFamily: 'BodoniFLF-Roman, serif' }}>
+            <RotatingText
+              texts={['Teacher', 'Friend', 'Easy', 'Understandable']}
+              mainClassName="px-2 py-1 rounded-lg shadow-lg border-2 border-gray-300"
+              staggerFrom={"last"}
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "-120%" }}
+              staggerDuration={0.025}
+              splitLevelClassName="overflow-hidden pb-0.5 sm:pb-1 md:pb-1"
+              transition={{ type: "spring", damping: 30, stiffness: 400 }}
+              rotationInterval={2000}
+            />
+          </div>
         </div>
 
         {/* Content Area - ADD blur and scale when menu is open */}
@@ -891,98 +917,25 @@ export function ResponsiveAIAssistant({ onNavigateToDashboard, onNavigate }: Res
     isBubbleOpen ? 'blur-sm scale-95' : ''
   }`}
 >
-          {!showChat ? (
-            /* Welcome Screen */
-            <div className="flex flex-col items-center justify-center h-full text-center space-y-6 lg:space-y-8">
-              {/* Globe */}
-              <div className="relative">
-                <div className="w-32 h-32 lg:w-48 lg:h-48 relative">
-                  <img
-                    src={globeImage}
-                    alt="AI Globe"
-                    className="w-full h-full object-contain drop-shadow-2xl"
-                  />
-                  {(isListening || isSpeaking) && (
-                    <div
-                      className="absolute inset-0 rounded-full border-4 animate-ping"
-                      style={{
-                        borderColor: "rgb(255, 182, 193)",
-                      }}
-                    ></div>
-                  )}
-                  <div
-                    className="absolute inset-0 blur-xl rounded-[2px]"
-                    style={{
-                      background:
-                        "linear-gradient(90deg, transparent, transparent)", //ball color
-                    }}
-                  ></div>
-                </div>
-              </div>
-
-              {/* Welcome Text */}
-              <div className="space-y-2 lg:space-y-4">
-                <h2 className="text-2xl lg:text-4xl text-white" style={{ fontFamily: 'Dakota Motors, Arial, sans-serif' }}>
-                  Victory Starts with Preparation!
-                </h2>
-                <p className="text-lg lg:text-xl text-gray-200" style={{ fontFamily: 'Dakota Motors, Arial, sans-serif' }}>
-                  Your smart study companion
-                </p>
-                <div className="mt-4 p-3 bg-white/10 rounded-lg border border-white/20 backdrop-blur-lg">
-                  <p className="font-BodoniFLF-Bold text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl text-gray-300">
-                    Achieve your competitive exam goals with intelligent practice, performance tracking, and expert guidance
-                  </p>
-                </div>
-              </div>
-
-              {/* Quick Action Buttons */}
-              <div className="flex flex-wrap gap-3 lg:gap-4 justify-center max-w-lg">
-                <Button
-                  onClick={() => setShowChat(true)}
-                  className="text-white border-0 px-6 py-3 rounded-full shadow-lg hover:opacity-90"
-                  style={{
-                    background:
-                      "linear-gradient(rgba(12, 12, 12, 0.77))",
-                  }}
-                >
-                  <MessageSquare className="w-4 h-4 mr-2" />
-                  Start Chat
-                </Button>
-                <Button
-                  onClick={handleVoiceInput}
-                  className={`${isListening ? "bg-red-600 hover:bg-black-100" : ""} text-white border-0 px-6 py-3 rounded-full shadow-lg`}
-                  style={
-                    !isListening
-                      ? {
-                          background:
-                            "linear-gradient(rgba(12, 12, 12, 0.77))",
-                        }
-                      : {}
-                  }
-                >
-                  {isListening ? (
-                    <MicOff className="w-4 h-4 mr-2" />
-                  ) : (
-                    <Mic className="w-4 h-4 mr-2" />
-                  )}
-                  {isListening ? "Stop" : "Voice"}
-                </Button>
-                
-              </div>
-            </div>
-          ) : (
-            /* Chat Interface */
-            <div className="h-full flex flex-col max-h-[calc(100vh-200px)]">
-              {/* Chat Messages */}
-              <div className="flex-1 overflow-y-auto mb-4 space-y-4 pb-4 min-h-0 scroll-smooth scrollbar-hide">
-                {messages.length === 0 && (
-                  <div className="text-center py-8">
-                    <p className="text-gray-200" style={{ fontFamily: 'Bethaine, Arial, sans-serif' }}>
-                      Start a conversation...
-                    </p>
-                  </div>
-                )}
-
+{!showChat ? (
+  /* MagneticPaint Welcome - aligned center-top */
+  <div className="absolute top-8 left-1/2 -translate-x-1/2 z-50 pointer-events-none w-full max-w-4xl">
+    <div className="w-full aspect-square">
+      <MagneticPaint text="V i n s h - A I" params={magneticDefault} className="w-full h-full" />
+    </div>
+  </div>
+) : (
+  /* Chat Interface - aligned center-top */
+  <div className="h-full flex flex-col max-h-[calc(100vh-200px)] pt-8">
+    {/* Chat Messages */}
+    <div className="flex-1 overflow-y-auto mb-4 space-y-4 pb-4 min-h-0 scroll-smooth scrollbar-hide">
+      {messages.length === 0 && (
+        <div className="text-center py-8">
+          <p className="text-gray-200" style={{ fontFamily: 'Bethaine, Arial, sans-serif' }}>
+            Start a conversation...
+          </p>
+        </div>
+      )}
                 {messages.map((message) => (
                   <div
                     key={message.id}
@@ -1055,6 +1008,26 @@ export function ResponsiveAIAssistant({ onNavigateToDashboard, onNavigate }: Res
               </div>
             </div>
           )}
+        </div>
+
+        {/* Thought Box - centered on page */}
+        <div className={`px-4 lg:px-6 relative z-20 ${isBubbleOpen ? 'scale-95 blur-sm pointer-events-none' : ''}`}>
+          <div className="w-full min-h-[40vh] flex items-center justify-center">
+            <Card className="inline-flex items-start gap-3 backdrop-blur-lg bg-white/10 border border-white/20 px-4 py-3 md:px-6 md:py-4 shadow-xl max-w-[90vw]">
+              <p className="text-white text-lg md:text-xl font-bold leading-snug text-center break-words">
+                {thoughts[thoughtIndex]}
+              </p>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="shrink-0 h-9 w-9 p-0 hover:bg-white/10 text-white"
+                onClick={nextThought}
+                title="Swap thought"
+              >
+                <Zap className="h-5 w-5" />
+              </Button>
+            </Card>
+          </div>
         </div>
 
         {/* Chat Input - ADD compression when menu is open */}
