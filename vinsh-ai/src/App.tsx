@@ -9,6 +9,7 @@ import { StudyPlanner } from "./components/StudyPlanner";
 import { Quizzes } from "./components/Quizzes";
 import { Syllabus } from "./components/Syllabus";
 import ClickSpark from "./components/ClickSpark";
+import Stairs from "./components/Stairs";
 
 type AppSection = 
   | "home" 
@@ -98,7 +99,9 @@ export default function App() {
 
   return (
     <ClickSpark sparkColor="rgb(255, 255, 255)" sparkCount={10} sparkRadius={18} extraScale={1.2}>
-      {renderCurrentSection()}
+      <Stairs triggerKey={currentSection}>
+        {renderCurrentSection()}
+      </Stairs>
     </ClickSpark>
   );
 }

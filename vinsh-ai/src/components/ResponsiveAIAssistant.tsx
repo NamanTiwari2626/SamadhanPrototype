@@ -1020,6 +1020,7 @@ export function ResponsiveAIAssistant({ onNavigateToDashboard, onNavigate }: Res
         </div>
 
         {/* Thought Box - centered on page */}
+        {!showChat && (
         <div className={`px-4 lg:px-6 relative z-20 ${isBubbleOpen ? 'scale-95 blur-sm pointer-events-none' : ''}`}>
   <div className="w-full min-h-[40vh] flex items-center justify-center">
     <Card className="inline-flex items-center justify-between backdrop-blur-lg bg-white/10 border border-white/20 px-4 py-3 md:px-6 md:py-4 shadow-xl max-w-[90vw]">
@@ -1038,6 +1039,7 @@ export function ResponsiveAIAssistant({ onNavigateToDashboard, onNavigate }: Res
     </Card>
   </div>
 </div>
+        )}
 
         {/* Chat Input - ADD compression when menu is open */}
 <div className={`p-4 lg:p-6 relative z-20 transition-all duration-300 ${
