@@ -677,12 +677,21 @@ export function ResponsiveAIAssistant({ onNavigateToDashboard, onNavigate }: Res
               paddingRight: '16px',
               boxSizing: 'border-box', // Important for proper width calculation
             }}
-            onClick={() => {
+            type="button"
+            onMouseDown={(e) => {
+              // Ensure navigation fires even if overlay intercepts click
+              e.preventDefault();
+              e.stopPropagation();
               console.log(`Clicked: ${item.label}, Section: ${item.section}`);
               if (onNavigate) {
                 onNavigate(item.section);
               }
-              setTimeout(() => setIsBubbleOpen(false), 100);
+              // Close immediately after scheduling navigation
+              setTimeout(() => setIsBubbleOpen(false), 0);
+            }}
+            onClick={(e) => {
+              // Extra safety to avoid overlay close before handler
+              e.stopPropagation();
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.backgroundColor = '#000000';
@@ -1012,23 +1021,23 @@ export function ResponsiveAIAssistant({ onNavigateToDashboard, onNavigate }: Res
 
         {/* Thought Box - centered on page */}
         <div className={`px-4 lg:px-6 relative z-20 ${isBubbleOpen ? 'scale-95 blur-sm pointer-events-none' : ''}`}>
-          <div className="w-full min-h-[40vh] flex items-center justify-center">
-            <Card className="inline-flex items-start gap-3 backdrop-blur-lg bg-white/10 border border-white/20 px-4 py-3 md:px-6 md:py-4 shadow-xl max-w-[90vw]">
-              <p className="text-white text-lg md:text-xl font-bold leading-snug text-center break-words">
-                {thoughts[thoughtIndex]}
-              </p>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="shrink-0 h-9 w-9 p-0 hover:bg-white/10 text-white"
-                onClick={nextThought}
-                title="Swap thought"
-              >
-                <Zap className="h-5 w-5" />
-              </Button>
-            </Card>
-          </div>
-        </div>
+  <div className="w-full min-h-[40vh] flex items-center justify-center">
+    <Card className="inline-flex items-center justify-between backdrop-blur-lg bg-white/10 border border-white/20 px-4 py-3 md:px-6 md:py-4 shadow-xl max-w-[90vw]">
+      <p className="text-white text-lg md:text-xl font-bold leading-snug text-center break-words flex-1 pr-3">
+        {thoughts[thoughtIndex]}
+      </p>
+      <Button
+        variant="ghost"
+        size="sm"
+        className="shrink-0 h-9 w-9 p-0 hover:bg-white/10 text-white"
+        onClick={nextThought}
+        title="Swap thought"
+      >
+        <Zap className="h-5 w-5" />
+      </Button>
+    </Card>
+  </div>
+</div>
 
         {/* Chat Input - ADD compression when menu is open */}
 <div className={`p-4 lg:p-6 relative z-20 transition-all duration-300 ${
@@ -1075,24 +1084,19 @@ export function ResponsiveAIAssistant({ onNavigateToDashboard, onNavigate }: Res
                   onChange={(e) => setInputText(e.target.value)}
                   onKeyPress={handleKeyPress}
                   placeholder="Type your message..."
-                  className="bg-white/10 border-white/20 text-white placeholder:text-white/60 pr-20 rounded-full focus:ring-2 focus:border-transparent"
-                  style={
-                    {
-                      "--tw-ring-color": "rgb(255, 182, 193)",
-                    } as React.CSSProperties
-                  }
+                  className="bg-transparent border-white/50 text-white placeholder:text-white/60 pr-20 rounded-full text-2xl px-6 py-4 h-16 focus:ring-0 focus:border-white/80 focus:bg-transparent focus:outline-none hover:border-white/60 transition-colors"
                 />
                 <Button
                   variant="ghost"
                   size="sm"
                   className="absolute right-10 top-1/2 -translate-y-1/2 h-8 w-8 p-0 hover:bg-white/10"
                   style={{
-                    color: "rgb(255, 182, 193)",
+                    color: "rgb(255, 255, 255)",
                   }}
                   onClick={handleFileSelect}
                   title="Attach files"
                 >
-                  <PaperclipAnimated width={16} height={16} stroke="rgb(255, 182, 193)" />
+                  <PaperclipAnimated width={16} height={16} stroke="rgb(255, 255, 255)" />
                 </Button>
                 <Button
                   variant="ghost"
@@ -1100,8 +1104,8 @@ export function ResponsiveAIAssistant({ onNavigateToDashboard, onNavigate }: Res
                   className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 p-0 hover:bg-white/10"
                   style={{
                     color: isListening
-                      ? "rgb(239, 68, 68)"
-                      : "rgb(255, 182, 193)",
+                      ? "rgb(255, 255, 255)"
+                      : "rgb(255, 255, 255)",
                   }}
                   onClick={handleVoiceInput}
                 >
@@ -1115,10 +1119,10 @@ export function ResponsiveAIAssistant({ onNavigateToDashboard, onNavigate }: Res
               <Button
                 onClick={handleSendMessage}
                 disabled={!inputText.trim() && selectedFiles.length === 0}
-                className="text-white border-0 rounded-full px-6 shadow-lg disabled:opacity-50 hover:opacity-90"
+                className="text-white border-5 rounded-10 px-6 shadow-lg disabled:opacity-50 hover:opacity-90"
                 style={{
                   background:
-                    "linear-gradient(135deg, rgb(114, 4, 85), rgb(145, 10, 103))",
+                    "linear-gradient(rgb(0, 0, 0))",
                 }}
               >
                 <Send className="h-4 w-4" />
@@ -1129,19 +1133,19 @@ export function ResponsiveAIAssistant({ onNavigateToDashboard, onNavigate }: Res
               <div className="mt-3 text-center">
                 <p
                   className="text-sm animate-pulse flex items-center justify-center gap-2"
-                  style={{ color: "rgb(255, 182, 193)" }}
+                  style={{ color: "rgb(255, 255, 255)" }}
                 >
                   <div
                     className="w-2 h-2 rounded-full animate-bounce"
                     style={{
-                      backgroundColor: "rgb(255, 182, 193)",
+                      backgroundColor: "rgb(250, 250, 250)",
                     }}
                   ></div>
                   Listening... Speak now
                   <div
                     className="w-2 h-2 rounded-full animate-bounce"
                     style={{
-                      backgroundColor: "rgb(255, 182, 193)",
+                      backgroundColor: "rgb(191, 191, 191)",
                       animationDelay: "0.1s",
                     }}
                   ></div>
@@ -1153,7 +1157,7 @@ export function ResponsiveAIAssistant({ onNavigateToDashboard, onNavigate }: Res
               <div className="mt-3 text-center">
                 <p
                   className="text-sm animate-pulse flex items-center justify-center gap-2"
-                  style={{ color: "rgb(255, 182, 193)" }}
+                  style={{ color: "rgb(135, 125, 127)" }}
                 >
                   <Volume2 className="w-4 h-4" />
                   Speaking...

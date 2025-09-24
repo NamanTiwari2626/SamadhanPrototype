@@ -19,6 +19,7 @@ import {
   CheckCircle,
   ChevronRight,
   ChevronLeft,
+  Flame,
 } from "lucide-react";
 
 interface StudyPlannerProps {
@@ -50,7 +51,9 @@ interface Milestone {
 export function StudyPlanner({ onBack }: StudyPlannerProps) {
   const [selectedTab, setSelectedTab] = useState("goals");
   const [showAddGoal, setShowAddGoal] = useState(false);
+  const [formErrors, setFormErrors] = useState<{ title?: string; description?: string; target?: string; deadline?: string }>({});
   const [editingGoal, setEditingGoal] = useState<string | null>(null);
+  const [editDraft, setEditDraft] = useState<Partial<Goal> | null>(null);
   const [newGoal, setNewGoal] = useState<Partial<Goal>>({
     title: "",
     description: "",
@@ -159,7 +162,13 @@ export function StudyPlanner({ onBack }: StudyPlannerProps) {
   };
 
   const handleAddGoal = () => {
-    if (newGoal.title && newGoal.description && newGoal.target && newGoal.deadline) {
+    const errors: { title?: string; description?: string; target?: string; deadline?: string } = {};
+    if (!newGoal.title) errors.title = "Title is required";
+    if (!newGoal.description) errors.description = "Description is required";
+    if (!newGoal.target || newGoal.target <= 0) errors.target = "Target must be > 0";
+    if (!newGoal.deadline) errors.deadline = "Deadline is required";
+    setFormErrors(errors);
+    if (Object.keys(errors).length === 0) {
       const goal: Goal = {
         id: Date.now().toString(),
         title: newGoal.title,
@@ -187,6 +196,7 @@ export function StudyPlanner({ onBack }: StudyPlannerProps) {
         milestones: []
       });
       setShowAddGoal(false);
+      setFormErrors({});
     }
   };
 
@@ -217,6 +227,31 @@ export function StudyPlanner({ onBack }: StudyPlannerProps) {
 
   const deleteGoal = (id: string) => {
     setGoals(goals.filter(goal => goal.id !== id));
+  };
+
+  const startEditGoal = (id: string) => {
+    const g = goals.find(g => g.id === id);
+    if (g) {
+      setEditingGoal(id);
+      setEditDraft({ ...g });
+    }
+  };
+
+  const applyEditGoal = () => {
+    if (!editingGoal || !editDraft) return;
+    setGoals(prev => prev.map(g => g.id === editingGoal ? {
+      ...g,
+      title: editDraft.title ?? g.title,
+      description: editDraft.description ?? g.description,
+      category: (editDraft.category as any) ?? g.category,
+      priority: (editDraft.priority as any) ?? g.priority,
+      target: editDraft.target ?? g.target,
+      current: editDraft.current ?? g.current,
+      unit: editDraft.unit ?? g.unit,
+      deadline: editDraft.deadline ?? g.deadline,
+    } : g));
+    setEditingGoal(null);
+    setEditDraft(null);
   };
 
   return (
@@ -302,11 +337,11 @@ export function StudyPlanner({ onBack }: StudyPlannerProps) {
         </div>
 
         <Tabs value={selectedTab} onValueChange={setSelectedTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2 bg-white/10 border-white/20">
-            <TabsTrigger value="goals" className="text-white data-[state=active]:bg-white/20">
+          <TabsList className="grid w-full grid-cols-2 bg-white/10 border-white/20 rounded-full p-1">
+            <TabsTrigger value="goals" className="text-white rounded-full px-6 py-2 data-[state=active]:bg-white/20">
               Goals
             </TabsTrigger>
-            <TabsTrigger value="progress" className="text-white data-[state=active]:bg-white/20">
+            <TabsTrigger value="progress" className="text-white rounded-full px-6 py-2 data-[state=active]:bg-white/20">
               Progress
             </TabsTrigger>
           </TabsList>
@@ -327,111 +362,122 @@ export function StudyPlanner({ onBack }: StudyPlannerProps) {
               </Button>
             </div>
 
-            {/* Add Goal Modal */}
+            {/* Add Goal Modal (overlay) */}
             {showAddGoal && (
-              <Card className="bg-white/10 border-white/20 p-6 backdrop-blur-lg">
-                <h4 className="text-xl font-bold text-white mb-4" style={{ fontFamily: 'Bethaine, Arial, sans-serif' }}>
-                  Add New Goal
-                </h4>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                  <div>
-                    <label className="text-sm font-medium text-gray-300 mb-2 block">Goal Title</label>
-                    <Input
-                      value={newGoal.title}
-                      onChange={(e) => setNewGoal({...newGoal, title: e.target.value})}
-                      placeholder="Enter goal title"
-                      className="bg-white/10 border-white/20 text-white placeholder:text-white/60"
-                    />
+              <div className="fixed inset-0 z-50 flex items-center justify-center" onClick={() => setShowAddGoal(false)}>
+                <div className="absolute inset-0 bg-black/70" />
+                <div
+                  className="relative z-10 w-full max-w-2xl text-white p-6 rounded-2xl shadow-xl border border-gray-700"
+                  style={{ backgroundColor: "rgb(0, 0, 0)", opacity: 1 }}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div className="flex items-center justify-between mb-4">
+                    <h4 className="text-2xl font-bold" style={{ fontFamily: 'Bethaine, Arial, sans-serif' }}>Add New Goal</h4>
                   </div>
-                  <div>
-                    <label className="text-sm font-medium text-gray-300 mb-2 block">Category</label>
-                    <Select value={newGoal.category} onValueChange={(value) => setNewGoal({...newGoal, category: value as any})}>
-                      <SelectTrigger className="bg-white/10 border-white/20 text-white">
-                        <SelectValue placeholder="Select Category" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="daily">Daily</SelectItem>
-                        <SelectItem value="weekly">Weekly</SelectItem>
-                        <SelectItem value="monthly">Monthly</SelectItem>
-                        <SelectItem value="long-term">Long-term</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
 
-                <div className="mb-4">
-                  <label className="text-sm font-medium text-gray-300 mb-2 block">Description</label>
-                  <Input
-                    value={newGoal.description}
-                    onChange={(e) => setNewGoal({...newGoal, description: e.target.value})}
-                    placeholder="Describe your goal"
-                    className="bg-white/10 border-white/20 text-white placeholder:text-white/60"
-                  />
-                </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div>
+                      <label className="text-sm font-medium text-gray-200 mb-2 block">Goal Title</label>
+                      <Input
+                        value={newGoal.title}
+                        onChange={(e) => setNewGoal({...newGoal, title: e.target.value})}
+                        placeholder="Enter goal title"
+                        className="bg-black border-gray-600 text-white placeholder:text-gray-400"
+                      />
+                      {formErrors.title && <p className="text-xs text-red-600 mt-1">{formErrors.title}</p>}
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-200 mb-2 block">Category</label>
+                      <Select value={newGoal.category} onValueChange={(value) => setNewGoal({...newGoal, category: value as any})}>
+                        <SelectTrigger className="bg-black border-gray-600 text-white">
+                          <SelectValue placeholder="Select Category" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="daily">Daily</SelectItem>
+                          <SelectItem value="weekly">Weekly</SelectItem>
+                          <SelectItem value="monthly">Monthly</SelectItem>
+                          <SelectItem value="long-term">Long-term</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
 
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                  <div>
-                    <label className="text-sm font-medium text-gray-300 mb-2 block">Target</label>
+                  <div className="mb-4">
+                    <label className="text-sm font-medium text-gray-200 mb-2 block">Description</label>
                     <Input
-                      type="number"
-                      value={newGoal.target}
-                      onChange={(e) => setNewGoal({...newGoal, target: parseInt(e.target.value) || 0})}
-                      placeholder="Target value"
-                      className="bg-white/10 border-white/20 text-white placeholder:text-white/60"
+                      value={newGoal.description}
+                      onChange={(e) => setNewGoal({...newGoal, description: e.target.value})}
+                      placeholder="Describe your goal"
+                      className="bg-black border-gray-600 text-white placeholder:text-gray-400"
                     />
+                    {formErrors.description && <p className="text-xs text-red-600 mt-1">{formErrors.description}</p>}
                   </div>
-                  <div>
-                    <label className="text-sm font-medium text-gray-300 mb-2 block">Unit</label>
-                    <Input
-                      value={newGoal.unit}
-                      onChange={(e) => setNewGoal({...newGoal, unit: e.target.value})}
-                      placeholder="e.g., hours, problems"
-                      className="bg-white/10 border-white/20 text-white placeholder:text-white/60"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-gray-300 mb-2 block">Priority</label>
-                    <Select value={newGoal.priority} onValueChange={(value) => setNewGoal({...newGoal, priority: value as any})}>
-                      <SelectTrigger className="bg-white/10 border-white/20 text-white">
-                        <SelectValue placeholder="Select Priority" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="high">High</SelectItem>
-                        <SelectItem value="medium">Medium</SelectItem>
-                        <SelectItem value="low">Low</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-gray-300 mb-2 block">Deadline</label>
-                    <Input
-                      type="date"
-                      value={newGoal.deadline}
-                      onChange={(e) => setNewGoal({...newGoal, deadline: e.target.value})}
-                      className="bg-white/10 border-white/20 text-white"
-                    />
-                  </div>
-                </div>
 
-                <div className="flex gap-3">
-                  <Button
-                    onClick={handleAddGoal}
-                    className="text-white border-0 rounded-full"
-                    style={{ background: 'linear-gradient(135deg, rgb(34, 197, 94), rgb(16, 185, 129))' }}
-                  >
-                    <CheckCircle className="w-4 h-4 mr-2" />
-                    Add Goal
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={() => setShowAddGoal(false)}
-                    className="border-white/20 text-white hover:bg-white/10"
-                  >
-                    Cancel
-                  </Button>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                    <div>
+                      <label className="text-sm font-medium text-gray-200 mb-2 block">Target</label>
+                      <Input
+                        type="number"
+                        value={newGoal.target}
+                        onChange={(e) => setNewGoal({...newGoal, target: parseInt(e.target.value) || 0})}
+                        placeholder="Target value"
+                        className="bg-black border-gray-600 text-white placeholder:text-gray-400"
+                      />
+                      {formErrors.target && <p className="text-xs text-red-600 mt-1">{formErrors.target}</p>}
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-200 mb-2 block">Unit</label>
+                      <Input
+                        value={newGoal.unit}
+                        onChange={(e) => setNewGoal({...newGoal, unit: e.target.value})}
+                        placeholder="e.g., hours, problems"
+                        className="bg-black border-gray-600 text-white placeholder:text-gray-400"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-200 mb-2 block">Priority</label>
+                      <Select value={newGoal.priority} onValueChange={(value) => setNewGoal({...newGoal, priority: value as any})}>
+                        <SelectTrigger className="bg-black border-gray-600 text-white">
+                          <SelectValue placeholder="Select Priority" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="high">High</SelectItem>
+                          <SelectItem value="medium">Medium</SelectItem>
+                          <SelectItem value="low">Low</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-200 mb-2 block">Deadline</label>
+                      <Input
+                        type="date"
+                        value={newGoal.deadline}
+                        onChange={(e) => setNewGoal({...newGoal, deadline: e.target.value})}
+                        className="bg-black border-gray-600 text-white"
+                      />
+                      {formErrors.deadline && <p className="text-xs text-red-600 mt-1">{formErrors.deadline}</p>}
+                    </div>
+                  </div>
+
+                  <div className="flex gap-3 justify-end">
+                    <Button
+                      variant="outline"
+                      onClick={() => setShowAddGoal(false)}
+                      className="bg-white text-black border-white hover:bg-black hover:text-white"
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      onClick={handleAddGoal}
+                      className="text-white border-0 rounded-full"
+                      style={{ background: 'linear-gradient(135deg, rgb(34, 197, 94), rgb(16, 185, 129))' }}
+                    >
+                      <CheckCircle className="w-4 h-4 mr-2" />
+                      Add Goal
+                    </Button>
+                  </div>
                 </div>
-              </Card>
+              </div>
             )}
 
             {/* Goals List */}
@@ -513,7 +559,7 @@ export function StudyPlanner({ onBack }: StudyPlannerProps) {
                         variant="ghost"
                         size="sm"
                         className="text-white hover:bg-white/10"
-                        onClick={() => setEditingGoal(goal.id)}
+                        onClick={() => startEditGoal(goal.id)}
                       >
                         <Edit className="w-4 h-4" />
                       </Button>
@@ -531,6 +577,70 @@ export function StudyPlanner({ onBack }: StudyPlannerProps) {
               ))}
             </div>
           </TabsContent>
+
+        {/* Edit Goal Modal */}
+        {editingGoal && editDraft && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center" onClick={() => { setEditingGoal(null); setEditDraft(null); }}>
+            <div className="absolute inset-0 bg-black/70" />
+            <div
+              className="relative z-10 w-full max-w-2xl text-white p-6 rounded-2xl shadow-xl border border-gray-700"
+              style={{ backgroundColor: 'rgb(0, 0, 0)', opacity: 1 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between mb-4">
+                <h4 className="text-2xl font-bold" style={{ fontFamily: 'Bethaine, Arial, sans-serif' }}>Edit Goal</h4>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div>
+                  <label className="text-sm font-medium text-gray-200 mb-2 block">Title</label>
+                  <Input value={editDraft.title as string} onChange={(e) => setEditDraft({ ...editDraft, title: e.target.value })} className="bg-black border-gray-600 text-white" />
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-200 mb-2 block">Category</label>
+                  <Select value={editDraft.category as any} onValueChange={(v) => setEditDraft({ ...editDraft, category: v as any })}>
+                    <SelectTrigger className="bg-black border-gray-600 text-white"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="daily">Daily</SelectItem>
+                      <SelectItem value="weekly">Weekly</SelectItem>
+                      <SelectItem value="monthly">Monthly</SelectItem>
+                      <SelectItem value="long-term">Long-term</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="mb-4">
+                <label className="text-sm font-medium text-gray-200 mb-2 block">Description</label>
+                <Input value={editDraft.description as string} onChange={(e) => setEditDraft({ ...editDraft, description: e.target.value })} className="bg-black border-gray-600 text-white" />
+              </div>
+
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                <div>
+                  <label className="text-sm font-medium text-gray-200 mb-2 block">Target</label>
+                  <Input type="number" value={editDraft.target as number} onChange={(e) => setEditDraft({ ...editDraft, target: parseInt(e.target.value) || 0 })} className="bg-black border-gray-600 text-white" />
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-200 mb-2 block">Current</label>
+                  <Input type="number" value={editDraft.current as number} onChange={(e) => setEditDraft({ ...editDraft, current: parseInt(e.target.value) || 0 })} className="bg-black border-gray-600 text-white" />
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-200 mb-2 block">Unit</label>
+                  <Input value={editDraft.unit as string} onChange={(e) => setEditDraft({ ...editDraft, unit: e.target.value })} className="bg-black border-gray-600 text-white" />
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-200 mb-2 block">Deadline</label>
+                  <Input type="date" value={editDraft.deadline as string} onChange={(e) => setEditDraft({ ...editDraft, deadline: e.target.value })} className="bg-black border-gray-600 text-white" />
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-3">
+                <Button variant="outline" className="bg-white text-black border-white hover:bg-black hover:text-white" onClick={() => { setEditingGoal(null); setEditDraft(null); }}>Cancel</Button>
+                <Button className="text-white border-0 rounded-full" style={{ background: 'linear-gradient(135deg, rgb(34, 197, 94), rgb(16, 185, 129))' }} onClick={applyEditGoal}>Save Changes</Button>
+              </div>
+            </div>
+          </div>
+        )}
 
           {/* Progress Tab */}
           <TabsContent value="progress" className="space-y-6">

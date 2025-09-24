@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { ResponsiveAIAssistant } from "./components/ResponsiveAIAssistant";
 import { StudyDashboard } from "./components/StudyDashboard";
 import { Counseling } from "./components/Counseling";
@@ -24,13 +24,36 @@ type AppSection =
 export default function App() {
   const [currentSection, setCurrentSection] = useState<AppSection>("home");
 
+  const setHashForSection = (section: AppSection) => {
+    try {
+      window.location.hash = section === "home" ? "homevinsh" : section;
+    } catch {}
+  };
+
+  // On initial load and on hash changes, sync the section
+  useEffect(() => {
+    const applyHash = () => {
+      const raw = (window.location.hash || "").replace(/^#/, "");
+      const mapped = raw === "homevinsh" || raw === "" ? "home" : (raw as AppSection);
+      if (mapped) {
+        setCurrentSection(mapped);
+      }
+    };
+    applyHash();
+    window.addEventListener("hashchange", applyHash);
+    return () => window.removeEventListener("hashchange", applyHash);
+  }, []);
+
   const handleNavigate = (section: string) => {
     console.log(`Navigating to: ${section}`);
     setCurrentSection(section as AppSection);
+    // Keep URL hash in sync as a fallback navigation mechanism
+    setHashForSection(section as AppSection);
   };
 
   const handleBack = () => {
     setCurrentSection("home");
+    setHashForSection("home");
   };
 
   const renderCurrentSection = () => {

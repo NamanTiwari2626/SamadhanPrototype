@@ -407,7 +407,7 @@ export function Quizzes({ onBack }: QuizzesProps) {
               onClick={previousQuestion}
               disabled={currentQuestion === 0}
               variant="outline"
-              className="border-white/20 text-white hover:bg-white/10 disabled:opacity-50"
+              className="bg-white text-black border-white hover:bg-black hover:text-white disabled:opacity-50"
             >
               <ChevronLeft className="w-4 h-4 mr-2" />
               Previous
@@ -416,14 +416,14 @@ export function Quizzes({ onBack }: QuizzesProps) {
             <div className="flex gap-2">
               <Button
                 variant="outline"
-                className="border-white/20 text-white hover:bg-white/10"
+                className="bg-white text-black border-white hover:bg-black hover:text-white"
               >
                 <Flag className="w-4 h-4 mr-2" />
                 Flag
               </Button>
               <Button
                 variant="outline"
-                className="border-white/20 text-white hover:bg-white/10"
+                className="bg-white text-black border-white hover:bg-black hover:text-white"
               >
                 <Bookmark className="w-4 h-4 mr-2" />
                 Bookmark
@@ -534,14 +534,14 @@ export function Quizzes({ onBack }: QuizzesProps) {
               </Button>
               <Button
                 variant="outline"
-                className="border-white/20 text-white hover:bg-white/10"
+                className="bg-white text-black border-white hover:bg-black hover:text-white"
               >
                 <Download className="w-4 h-4 mr-2" />
                 Download Results
               </Button>
               <Button
                 variant="outline"
-                className="border-white/20 text-white hover:bg-white/10"
+                className="bg-white text-black border-white hover:bg-black hover:text-white"
               >
                 <Share2 className="w-4 h-4 mr-2" />
                 Share Results
@@ -636,18 +636,12 @@ export function Quizzes({ onBack }: QuizzesProps) {
         </div>
 
         <Tabs value={selectedTab} onValueChange={setSelectedTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4 bg-white/10 border-white/20">
-            <TabsTrigger value="available" className="text-white data-[state=active]:bg-white/20">
+          <TabsList className="grid w-full grid-cols-2 bg-white/10 border-white/20 rounded-full p-1">
+            <TabsTrigger value="available" className="text-white rounded-full px-6 py-2 data-[state=active]:bg-white/20">
               Available
             </TabsTrigger>
-            <TabsTrigger value="completed" className="text-white data-[state=active]:bg-white/20">
+            <TabsTrigger value="completed" className="text-white rounded-full px-6 py-2 data-[state=active]:bg-white/20">
               Completed
-            </TabsTrigger>
-            <TabsTrigger value="favorites" className="text-white data-[state=active]:bg-white/20">
-              Favorites
-            </TabsTrigger>
-            <TabsTrigger value="leaderboard" className="text-white data-[state=active]:bg-white/20">
-              Leaderboard
             </TabsTrigger>
           </TabsList>
 
@@ -772,7 +766,7 @@ export function Quizzes({ onBack }: QuizzesProps) {
                     </Button>
                     <Button
                       variant="outline"
-                      className="border-white/20 text-white hover:bg-white/10"
+                      className="bg-white text-black border-white hover:bg-black hover:text-white"
                     >
                       <BarChart3 className="w-4 h-4" />
                     </Button>
