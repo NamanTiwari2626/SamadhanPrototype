@@ -84,7 +84,7 @@ Use the study planner and dashboard to organize your learning schedule.
 ### Quiz Page
 ![Quiz Page](screenshots/quiz-page.png)
 
-### Dashboard
+### Community Chat
 ![Dashboard](screenshots/community-chat.png)
 
 
