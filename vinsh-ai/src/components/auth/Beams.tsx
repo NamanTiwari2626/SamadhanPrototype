@@ -25,7 +25,7 @@ const Beams: FC<BeamsProps> = ({
 }) => {
   return (
     <>
-      <style>{`
+      <style jsx global>{`
         @keyframes beamPulse {
           0%, 100% {
             opacity: 0.3;
