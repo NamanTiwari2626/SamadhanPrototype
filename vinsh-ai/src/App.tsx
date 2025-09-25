@@ -26,6 +26,7 @@ type AppSection =
 
 export default function App() {
   const [currentSection, setCurrentSection] = useState<AppSection>("auth");
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   const setHashForSection = (section: AppSection) => {
     try {
@@ -33,18 +34,24 @@ export default function App() {
     } catch {}
   };
 
-  // On initial load and on hash changes, sync the section
+  // On initial load, derive auth from localStorage and sync the section
   useEffect(() => {
+    const authed = (() => {
+      try { return localStorage.getItem("vinsh_is_auth") === "1"; } catch { return false; }
+    })();
+    setIsAuthenticated(authed);
     const applyHash = () => {
       const raw = (window.location.hash || "").replace(/^#/, "");
-      const mapped = raw === "homevinsh" || raw === "" ? "auth" : (raw as AppSection);
+      const mapped = raw === "homevinsh" || raw === ""
+        ? (authed ? "home" : "auth")
+        : (raw as AppSection);
       if (mapped) {
         setCurrentSection(mapped);
       }
     };
-    // ensure default hash is auth on first load
+    // ensure default hash reflects auth state on first load
     if (!window.location.hash) {
-      try { window.location.hash = "auth"; } catch {}
+      try { window.location.hash = authed ? "home" : "auth"; } catch {}
     }
     applyHash();
     window.addEventListener("hashchange", applyHash);
@@ -94,7 +101,17 @@ export default function App() {
       case "community":
         return <CommunityChat onBack={handleBack} />;
       case "auth":
-        return <AuthPage onSuccess={() => { setCurrentSection("home"); setHashForSection("home"); }} onBack={handleBack} />;
+        return (
+          <AuthPage
+            onSuccess={() => {
+              try { localStorage.setItem("vinsh_is_auth", "1"); } catch {}
+              setIsAuthenticated(true);
+              setCurrentSection("home");
+              setHashForSection("home");
+            }}
+            onBack={handleBack}
+          />
+        );
       default:
         return (
           <ResponsiveAIAssistant 
