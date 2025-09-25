@@ -9,7 +9,7 @@ Due to unforeseen circumstances, we were unable to deploy on time. In the rush, 
 
 #### Deployment-Link
 ```bash
-https://vinsh-ai.vercel.app/#homevinsh
+https://vinsh-ai.vercel.app/#auth
 ```
 
 ## Features
