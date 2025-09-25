@@ -1,7 +1,7 @@
-# SamadhanPrototype
+# VinshAI
 ## Overview
 
-SamadhanPrototype is an educational web application designed to enhance learning and academic productivity. It provides tools for study planning, quizzes, AI-assisted learning, and interactive dashboards to help students manage their studies efficiently.
+VinshAI is an educational web application designed to enhance learning and academic productivity. It provides tools for study planning, quizzes, AI-assisted learning, and interactive dashboards to help students manage their studies efficiently.
 
 ## Deployment
 
