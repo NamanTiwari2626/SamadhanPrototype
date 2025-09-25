@@ -10,6 +10,7 @@ import { Quizzes } from "./components/Quizzes";
 import { Syllabus } from "./components/Syllabus";
 import ClickSpark from "./components/ClickSpark";
 import Stairs from "./components/Stairs";
+import AuthPage from "./components/auth/AuthPage";
 
 type AppSection = 
   | "home" 
@@ -20,10 +21,11 @@ type AppSection =
   | "study-planner" 
   | "quizzes" 
   | "syllabus"
-  | "community";
+  | "community"
+  | "auth";
 
 export default function App() {
-  const [currentSection, setCurrentSection] = useState<AppSection>("home");
+  const [currentSection, setCurrentSection] = useState<AppSection>("auth");
 
   const setHashForSection = (section: AppSection) => {
     try {
@@ -35,11 +37,15 @@ export default function App() {
   useEffect(() => {
     const applyHash = () => {
       const raw = (window.location.hash || "").replace(/^#/, "");
-      const mapped = raw === "homevinsh" || raw === "" ? "home" : (raw as AppSection);
+      const mapped = raw === "homevinsh" || raw === "" ? "auth" : (raw as AppSection);
       if (mapped) {
         setCurrentSection(mapped);
       }
     };
+    // ensure default hash is auth on first load
+    if (!window.location.hash) {
+      try { window.location.hash = "auth"; } catch {}
+    }
     applyHash();
     window.addEventListener("hashchange", applyHash);
     return () => window.removeEventListener("hashchange", applyHash);
@@ -87,6 +93,8 @@ export default function App() {
         return <Syllabus onBack={handleBack} />;
       case "community":
         return <CommunityChat onBack={handleBack} />;
+      case "auth":
+        return <AuthPage onSuccess={() => { setCurrentSection("home"); setHashForSection("home"); }} onBack={handleBack} />;
       default:
         return (
           <ResponsiveAIAssistant 
