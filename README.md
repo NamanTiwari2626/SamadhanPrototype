@@ -3,6 +3,15 @@
 
 SamadhanPrototype is an educational web application designed to enhance learning and academic productivity. It provides tools for study planning, quizzes, AI-assisted learning, and interactive dashboards to help students manage their studies efficiently.
 
+## Deployment
+
+Due to unforeseen circumstances, we were unable to deploy on time. In the rush, I mistakenly pasted the GitHub repository link in the deployment section. I sincerely apologize for this oversight and any inconvenience it may have caused. Kindly consider the repository link provided, and I am also sharing the deployment link below for your reference. Your understanding is greatly appreciated.
+
+#### Deployment-Link
+```bash
+https://vinsh-ai.vercel.app/#homevinsh
+```
+
 ## Features
 
 AI Study Assistant: Interactive AI tool to help with queries, explanations, and study guidance.
